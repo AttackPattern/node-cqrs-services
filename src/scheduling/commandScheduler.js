@@ -1,6 +1,7 @@
 import Identity from '../identity';
 import Schedule from './schedule';
 import CommandFailure from './commandFailure';
+import moment from 'moment';
 
 export default class CommandScheduler {
 
@@ -10,13 +11,13 @@ export default class CommandScheduler {
     this.deliverer = deliverer;
   }
 
-  schedule = async ({ service, target, clock, due, command }) => {
+  schedule = async ({ service, target, command, due, seconds }) => {
     command.$identity = Identity.system;
     command.$scheduler = new Schedule({
-      service: service,
-      target: target,
-      due: due,
-      clock: clock || this.clock,
+      service,
+      target,
+      due: due || moment(this.clock.now()).add(seconds || 0, 'seconds').toDate(),
+      clock: this.clock,
       attempts: 0
     });
     await this.store.push(command);
