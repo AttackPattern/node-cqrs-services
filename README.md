@@ -1,2 +1,2 @@
-# node-cqrs-lib
-Library of base classes for Node.js implementation of CQRS
+# node-cqrs-services
+Library to support standing up a CQRS services project.
