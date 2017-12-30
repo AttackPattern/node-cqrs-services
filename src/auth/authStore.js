@@ -85,7 +85,7 @@ export default class AuthStore {
       await user.save({ status, version: uuidV4() }, { patch: true });
     }
     catch (e) {
-      console.log(`Error setting user status`, e);
+      console.log('Error setting user status', e);
       throw e;
     }
   }

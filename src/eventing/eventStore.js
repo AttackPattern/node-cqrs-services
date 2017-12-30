@@ -29,7 +29,7 @@ export default class EventStore {
 
   record = async events =>
     await eachSeries(events, async(event, cb) => {
-      await this.recordEvent(event)
+      await this.recordEvent(event);
       cb();
     })
 
