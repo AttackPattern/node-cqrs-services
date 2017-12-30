@@ -2,7 +2,7 @@ import Router from 'koa-router';
 import { Strategy as LocalStrategy } from 'passport-local';
 
 export default class AuthenticationRouter extends Router {
-  constructor({ passport, authStore, userProfiles, getVendor, authTokenMapper, passwordHandler }) {
+  constructor({ passport, authStore, decorateUser, authTokenMapper, passwordHandler }) {
     super();
 
     this.authStore = authStore;
@@ -20,19 +20,10 @@ export default class AuthenticationRouter extends Router {
             return;
           }
 
-          let vendor = identity.claims.vendorId && (await getVendor(identity.claims.vendorId));
           ctx.body = {
             ...identity,
             token: authTokenMapper.sign(identity),
-            profile: await userProfiles.getProfile(identity.userId),
-            vendor: vendor && {
-              companyName: vendor.companyName,
-              capabilities: vendor.capabilities,
-              phone: vendor.phone,
-              homeLocation: vendor.homeLocation,
-              incidentDetails: vendor.incidentDetails,
-              reportEmail: vendor.reportEmail
-            }
+            ...await decorateUser(identity)
           };
           ctx.status = 200;
         })(ctx, next));

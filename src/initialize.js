@@ -1,13 +1,14 @@
 import aws from 'aws-sdk';
+import passport from 'koa-passport';
 
-// import AuthenticationRouter from './routing/authenticationRouter';
+import AuthenticationRouter from './routing/authenticationRouter';
 import CommandRouter from './routing/commandRouter';
 import UploadRouter from './routing/uploadRouter';
 import { Identity, Repository } from 'node-cqrs-lib';
 import IdentityMiddleware from './routing/identityMiddleware';
 import CommandExecutor from './commandHandling/commandExecutor';
 import WebCommandHandler from './commandHandling/webCommandHandler';
-// import PasswordCommandHandler from './commandHandling/passwordCommandHandler';
+import PasswordCommandHandler from './commandHandling/passwordCommandHandler';
 import DomainCommandHandler from './commandHandling/domainCommandDeliverer';
 import { EventMapper, EventStore, EventStoreInitializer } from './eventing';
 import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
@@ -17,7 +18,7 @@ import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
 
 export default class Services {
-  static initialize = async ({ container, config, db, domain, emailTemplates }) => {
+  static initialize = async ({ container, config, db, domain, emailTemplates, decorateUser }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
 
@@ -100,15 +101,23 @@ export default class Services {
     const uploadRouter = new UploadRouter({
       S3_Bucket: config('aws').S3_Bucket
     });
-    // const authRouter = new AuthenticationRouter({ passport, authStore, userProfiles, getVendor, authTokenMapper, passwordHandler: new PasswordCommandHandler(domainCommandDeliverer, authStore) });
     const commandRouter = new CommandRouter({ webHandler: new WebCommandHandler(domainCommandDeliverer) });
+
+    const passwordHandler = new PasswordCommandHandler(domainCommandDeliverer, authStore);
+    const authRouter = new AuthenticationRouter({
+      passport,
+      authStore,
+      decorateUser,
+      authTokenMapper,
+      passwordHandler
+    });
 
 
     return {
       routers: {
         upload: uploadRouter,
-        // auth: authRouter,
-        command: commandRouter
+        command: commandRouter,
+        auth: authRouter
       },
       middleware: [
         new IdentityMiddleware(authTokenMapper).inject

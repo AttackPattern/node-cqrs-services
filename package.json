@@ -21,7 +21,8 @@
   "homepage": "https://github.com/AttackPattern/node-cqrs-services#readme",
   "dependencies": {
     "moment": "~2.20.1",
-    "uuid": "~3.1.0"
+    "uuid": "~3.1.0",
+    "koa-passport": "~4.0.1"
   },
   "devDependencies": {
     "babel-cli": "~6.18.0",
