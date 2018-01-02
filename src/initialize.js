@@ -72,8 +72,8 @@ export default class Services {
 
     aws.config.update({
       region: config('aws').SNS_SES_region,
-      accessKeyId: config.decrypt(config('aws').AccessKey),
-      secretAccessKey: config.decrypt(config('aws').SecretAccessKey)
+      accessKeyId: config('aws').AccessKey && config.decrypt(config('aws').AccessKey),
+      secretAccessKey: config('aws').SecretAccessKey && config.decrypt(config('aws').SecretAccessKey)
     });
 
     let notifications = new AwsSNS({
