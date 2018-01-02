@@ -7,7 +7,7 @@ export default class CommandExecutor {
     this.repository = repository;
   }
 
-  execute = async({ aggregateId, commandType, command }) => {
+  execute = async ({ aggregateId, commandType, command }) => {
     const handler = this.handlers[commandType] && this.handlers[commandType]();
     if (!handler) {
       throw new CommandHandlerError({
