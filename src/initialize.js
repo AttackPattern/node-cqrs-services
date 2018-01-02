@@ -112,16 +112,15 @@ export default class Services {
       passwordHandler
     });
 
-
     return {
       routers: {
         upload: uploadRouter,
         command: commandRouter,
         auth: authRouter
       },
-      middleware: [
-        new IdentityMiddleware(authTokenMapper).inject
-      ],
+      middleware: {
+        identity: new IdentityMiddleware(authTokenMapper).inject
+      },
       authStore,
       repositories
     };
