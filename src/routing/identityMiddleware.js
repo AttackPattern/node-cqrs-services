@@ -5,7 +5,7 @@ export default class IdentityMiddleware {
     this.authTokenMapper = authTokenMapper;
   }
 
-  inject = async(ctx, next) => {
+  inject = async (ctx, next) => {
     try {
       let { identity, token } = await this.getIdentity(ctx);
       ctx.$identity = identity;
@@ -20,9 +20,12 @@ export default class IdentityMiddleware {
   }
 
   getIdentity = ctx => {
-    if (!ctx.headers.authorization) {
+    let { [0]: type, [1]: token } = ctx.headers.authorization.split(' ');
+
+    token = token || type;
+    if (!token) {
       return { identity: Identity.anonymous };
     }
-    return this.authTokenMapper.verify(ctx.headers.authorization);
+    return this.authTokenMapper.verify(token);
   }
 }
