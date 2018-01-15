@@ -1,15 +1,10 @@
-import { CommandScheduling, Schedule } from 'node-cqrs-lib';
-import ScheduledCommandStoreInitializer from './scheduledCommandStoreInitializer';
-
-let { ScheduledCommand } = CommandScheduling;
+import { Schedule } from 'node-cqrs-lib';
 
 export default class ScheduledCommandStore {
 
   constructor(db, commandMapping, getClock) {
     this.getClock = getClock;
     this.commandMapping = commandMapping;
-
-    this.initialize = async () => await ScheduledCommandStoreInitializer.assureTables(db);
 
     this.ScheduledCommands = require('bookshelf')(db.knex('scheduledcommands')).Model.extend({
       tableName: 'commands'
@@ -42,7 +37,6 @@ export default class ScheduledCommandStore {
 
   loadCommands = async () => {
     try {
-      await this.initialize();
       return (await this.ScheduledCommands.query()).map(cmd => this.fromStoredCommand(cmd));
     }
     catch (e) {

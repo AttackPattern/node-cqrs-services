@@ -13,14 +13,24 @@ import DomainCommandHandler from './commandHandling/domainCommandDeliverer';
 import { EventMapper, EventStore, EventStoreInitializer } from './eventing';
 import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
-import configureScheduling from './scheduling/configure';
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
+import { CommandScheduling } from 'node-cqrs-lib';
+import ScheduledCommandStore from './scheduling/scheduledCommandStore';
+import ScheduledCommandStoreInitializer from './scheduling/scheduledCommandStoreInitializer';
+import DomainServices from './scheduling/domainServices';
+
+const {
+  RealWorldClock,
+  CommandScheduler,
+  CommandScheduleTrigger
+} = CommandScheduling;
 
 export default class Services {
   static initialize = async ({ container, config, db, domain, emailTemplates, decorateUser }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
+    await ScheduledCommandStoreInitializer.assureTables(db);
 
     function mapHandlers(handlers) {
       return Object.entries(handlers).map(({
@@ -84,8 +94,21 @@ export default class Services {
     });
     container.register('PushNotifications', () => notifications);
 
+    const stubSES = {
+      sendEmail: async ({ recipient, subject, body }) => {
+        console.log(`Simulating Sending Email
+  ---------------------
+  ${subject}
+  To: ${recipient}
+  ---------------------
+  ${body.text}`);
+      }
+    };
+
     let emailer = new Emailer({
-      sender: new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }),
+      sender: (config('aws').Test || []).includes('email') ?
+        new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }) :
+        stubSES,
       templateLibrary: emailTemplates
     });
     container.register('Emailer', () => emailer);
@@ -95,7 +118,15 @@ export default class Services {
     container.register('AuthStore', () => authStore);
 
     let domainCommandDeliverer = new DomainCommandHandler(executors);
-    let domainServices = configureScheduling({ db, deliverer: domainCommandDeliverer, commands, repositories });
+    let clock = new RealWorldClock();
+    let commandStore = new ScheduledCommandStore(db, (service, commandName) => commands[service][commandName], () => new RealWorldClock());
+    let commandScheduler = new CommandScheduler({ store: commandStore, clock, deliverer: domainCommandDeliverer });
+
+    let trigger = new CommandScheduleTrigger(commandScheduler, clock, 1000);
+    trigger.start();
+
+    let domainServices = new DomainServices({ commandScheduler, repositories, clock });
+
     container.register('DomainServices', () => domainServices);
 
     const uploadRouter = new UploadRouter({
