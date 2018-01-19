@@ -1,1 +1,1 @@
-exports.Services = require('./lib/initialize');
+exports.Services = require('./lib/initialize').default;

@@ -8,15 +8,15 @@ export default class DomainServices {
     this.clock = clock;
   }
 
-  get = async({ service, id }) => this.repositories[service].get(id);
+  get = async ({ service, id }) => this.repositories[service].get(id);
 
-  create = async({ aggregate, target, command }) => {
+  create = async ({ aggregate, target, command }) => {
     let id = target || uuidV4();
     await this.scheduleCommand({ service: aggregate, target: id, command });
     return id;
   }
 
-  scheduleCommand = async({ service, target, command, due, seconds }) => {
+  scheduleCommand = async ({ service, target, command, due, seconds }) => {
     this.commandScheduler.schedule({
       service: service,
       target: target,

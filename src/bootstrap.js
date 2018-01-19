@@ -1,10 +1,9 @@
-import uuidV4 from 'uuid/v4';
 import { Created as User_Created } from './domain/user/events';
 
 let hasRun = false;
 
 export default class Bootstrap {
-  static assureInitialized = async({ systemUser, userRepository, authStore }) => {
+  static assureInitialized = async ({ systemUser, userRepository, authStore }) => {
     if (hasRun || !!(await userRepository.get(systemUser.userId))) {
       return;
     }
@@ -23,10 +22,10 @@ export default class Bootstrap {
         username: systemUser.username,
         profile: systemUser.profile
       }), {
-        sequenceNumber: 1,
-        aggregateId: systemUser.userId,
-        actor: 'bootstrap'
-      })
+          sequenceNumber: 1,
+          aggregateId: systemUser.userId,
+          actor: 'bootstrap'
+        })
     ];
 
     await userRepository.record(events);

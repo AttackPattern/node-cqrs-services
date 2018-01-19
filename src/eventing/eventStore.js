@@ -1,6 +1,4 @@
-import mysql from 'mysql2/promise';
 import eachSeries from 'async/eachSeries';
-import EventStoreInitializer from './eventStoreInitializer';
 import bookshelf from 'bookshelf';
 
 export default class EventStore {
@@ -28,7 +26,7 @@ export default class EventStore {
   }
 
   record = async events =>
-    await eachSeries(events, async(event, cb) => {
+    await eachSeries(events, async (event, cb) => {
       await this.recordEvent(event);
       cb();
     })

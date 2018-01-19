@@ -5,7 +5,7 @@ export default class PositionMiddleware {
     this.positionStore = positionStore;
   }
 
-  inject = async(ctx, next) => {
+  inject = async (ctx, next) => {
     ctx.$position = this.getPosition(ctx);
     await next();
 

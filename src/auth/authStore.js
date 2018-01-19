@@ -18,7 +18,7 @@ export default class AuthStore {
     return store;
   }
 
-  addLogin = async({ userId, username, password, claims = { roles: [] }, status = 'active' }) => {
+  addLogin = async ({ userId, username, password, claims = { roles: [] }, status = 'active' }) => {
     try {
       let hashedPassword = await bcrypt.hash(password, saltRounds);
       let user = (await this.Login.where({ username }).fetch({ columns: ['id', 'userId', 'username', 'claims'] }));
@@ -37,7 +37,7 @@ export default class AuthStore {
     }
   }
 
-  getUser = async({ username, version }) => {
+  getUser = async ({ username, version }) => {
     try {
       let userRecords = await this.Login.where(version ? { username, version } : { username }).query();
       let user = userRecords.length && userRecords[0];
@@ -52,7 +52,7 @@ export default class AuthStore {
     }
   }
 
-  checkLogin = async(username, password) => {
+  checkLogin = async (username, password) => {
     let userRecords = await this.Login.where({ username }).where('status', '<>', 'suspended').query();
     let user = userRecords.length && userRecords[0];
     if (user && await bcrypt.compare(password, user.password)) {
@@ -60,7 +60,7 @@ export default class AuthStore {
     }
   }
 
-  addClaims = async({ userId, claims }) => {
+  addClaims = async ({ userId, claims }) => {
     try {
       let user = await this.Login.where({ userId }).fetch();
       await user.save({ claims: JSON.stringify(merge(user.get('claims') || {}, claims)), version: uuidV4() }, { patch: true });
@@ -71,15 +71,15 @@ export default class AuthStore {
     }
   }
 
-  changePassword = async({ userId, password }) => {
+  changePassword = async ({ userId, password }) => {
     let hashedPassword = await bcrypt.hash(password, saltRounds);
     let user = await this.Login.where({ userId }).fetch();
     await user.save({ password: hashedPassword, version: uuidV4(), status: 'active' }, { patch: true });
   }
-  enableUser = async({ userId }) => this._setUserStatus({ userId, status: 'active' });
-  suspendUser = async({ userId }) => this._setUserStatus({ userId, status: 'suspended' });
+  enableUser = async ({ userId }) => this._setUserStatus({ userId, status: 'active' });
+  suspendUser = async ({ userId }) => this._setUserStatus({ userId, status: 'suspended' });
 
-  _setUserStatus = async({ userId, status }) => {
+  _setUserStatus = async ({ userId, status }) => {
     try {
       let user = await this.Login.where({ userId }).fetch();
       await user.save({ status, version: uuidV4() }, { patch: true });
