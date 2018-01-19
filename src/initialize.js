@@ -15,16 +15,10 @@ import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { CommandScheduling } from 'node-cqrs-lib';
+import { RealWorldClock, CommandScheduler, CommandScheduleTrigger } from 'node-cqrs-lib';
 import ScheduledCommandStore from './scheduling/scheduledCommandStore';
 import ScheduledCommandStoreInitializer from './scheduling/scheduledCommandStoreInitializer';
 import DomainServices from './scheduling/domainServices';
-
-const {
-  RealWorldClock,
-  CommandScheduler,
-  CommandScheduleTrigger
-} = CommandScheduling;
 
 export default class Services {
   static initialize = async ({ container, config, db, domain, emailTemplates, decorateUser }) => {
