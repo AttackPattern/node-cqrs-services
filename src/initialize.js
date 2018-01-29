@@ -28,7 +28,7 @@ export default class Services {
 
     function mapHandlers(handlers) {
       return Object.entries(handlers).map(({
-            [0]: handlerName, [1]: handler }) =>
+        [0]: handlerName, [1]: handler }) =>
         ({ name: handlerName, handler: () => container.resolve(handler) }))
         .reduce((result, item) => {
           result[item.name] = item.handler;
@@ -50,7 +50,7 @@ export default class Services {
     }, {});
 
     let executors = Object.entries(domain).map(({
-        [0]: aggregateName, [1]: aggregate }) =>
+      [0]: aggregateName, [1]: aggregate }) =>
       new CommandExecutor({
         name: aggregateName,
         handlers: mapHandlers(aggregate.handlers),
@@ -101,8 +101,8 @@ export default class Services {
 
     let emailer = new Emailer({
       sender: (config('aws').Test || []).includes('email') ?
-        new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }) :
-        stubSES,
+        stubSES :
+        new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }),
       templateLibrary: emailTemplates
     });
     container.register('Emailer', () => emailer);
