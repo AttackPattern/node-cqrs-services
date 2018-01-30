@@ -7,10 +7,14 @@ let saltRounds = 10;
 
 export default class AuthStore {
 
-  static create = async db => {
+  static create = async ({ db, roleMapping }) => {
     await AuthStoreInitializer.assureTables(db);
 
     let store = new AuthStore();
+    store.getIdentity = id => ({
+      ...new Identity(id),
+      capabilities: roleMapping.getCapabilities(id.claims.roles)
+    });
     store.Login = require('bookshelf')(db.knex('auth')).Model.extend({
       tableName: 'logins'
     });
@@ -44,7 +48,7 @@ export default class AuthStore {
       if (user) {
         user.claims = user.claims || { roles: [] };
       }
-      return user && new Identity(user);
+      return user && this.getIdentity(user);
     }
     catch (e) {
       console.log('Could not find user', e);
@@ -56,7 +60,7 @@ export default class AuthStore {
     let userRecords = await this.Login.where({ username }).where('status', '<>', 'suspended').query();
     let user = userRecords.length && userRecords[0];
     if (user && await bcrypt.compare(password, user.password)) {
-      return { ...new Identity(user), status: user.status };
+      return { ...this.getIdentity(user), status: user.status };
     }
   }
 

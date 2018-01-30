@@ -28,25 +28,29 @@ export default class WebCommandHandler {
       return;
     }
     catch (e) {
-      if (!e.error) {
-        console.log('Unexpected exception');
-        ctx.status = 500;
-      }
-      // TODO (brett): get the typecheck working
-      else if (e.error.name === 'ValidationError') {
-        console.log('Validation failure');
-        ctx.status = 400;
-      }
-      else if (e.error.name === 'AuthorizationError') {
-        console.log('Authorization failure');
-        ctx.status = 403;
-      }
-      else {
-        ctx.status = 404;
-      }
-
-      console.dir(e);
-      ctx.body = { error: e.error ? e.error.message : e.message };
+      this.handleError(ctx, e);
     }
+  }
+
+  handleError(ctx, e) {
+    if (!e.error) {
+      console.log('Unexpected exception');
+      ctx.status = 500;
+    }
+    // TODO (brett): get the typecheck working
+    else if (e.error.name === 'ValidationError') {
+      console.log('Validation failure');
+      ctx.status = 400;
+    }
+    else if (e.error.name === 'AuthorizationError') {
+      console.log('Authorization failure');
+      ctx.status = 403;
+    }
+    else {
+      ctx.status = 404;
+    }
+
+    ctx.body = { error: e.error ? e.error.message : e.message };
+    console.dir(e);
   }
 }

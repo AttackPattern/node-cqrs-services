@@ -15,13 +15,13 @@ import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { RealWorldClock, CommandScheduler, CommandScheduleTrigger } from 'node-cqrs-lib';
+import { RealWorldClock, CommandScheduler, CommandScheduleTrigger, RoleMapping } from 'node-cqrs-lib';
 import ScheduledCommandStore from './scheduling/scheduledCommandStore';
 import ScheduledCommandStoreInitializer from './scheduling/scheduledCommandStoreInitializer';
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
-  static initialize = async ({ container, config, db, domain, emailTemplates, decorateUser }) => {
+  static initialize = async ({ container, config, db, domain, emailTemplates, decorateUser = i => i }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
     await ScheduledCommandStoreInitializer.assureTables(db);
@@ -65,7 +65,7 @@ export default class Services {
         return result;
       }, {});
 
-    let authStore = await AuthStore.create(db);
+    let authStore = await AuthStore.create({ db, roleMapping: new RoleMapping(config('roles').roles) });
 
     let authTokenMapper = new AuthTokenMapper({
       authStore,
