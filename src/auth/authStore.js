@@ -13,7 +13,7 @@ export default class AuthStore {
     let store = new AuthStore();
     store.getIdentity = id => ({
       ...new Identity(id),
-      capabilities: roleMapping.getCapabilities(id.claims.roles)
+      rights: roleMapping.getCapabilities(id.claims.roles)
     });
     store.Login = require('bookshelf')(db.knex('auth')).Model.extend({
       tableName: 'logins'
