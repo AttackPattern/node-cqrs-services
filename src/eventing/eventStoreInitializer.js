@@ -15,8 +15,18 @@ export default class EventStoreInitializer {
         table.string('actor', 255).notNullable();
         table.text('position');
         table.text('body').notNullable();
-        table.string('encryptionKey', 36);
         table.unique(['aggregateId', 'aggregate', 'sequenceNumber']);
+      });
+    }
+    if (!await knex.schema.hasTable('snapshots')) {
+      await knex.schema.createTableIfNotExists('snapshots', table => {
+        table.bigIncrements('id').primary().notNullable();
+        table.string('aggregate', 255).notNullable();
+        table.string('aggregateId', 36).notNullable();
+        table.integer('version').notNullable();
+        table.dateTime('timestamp').defaultTo(knex.raw('now()'));
+        table.text('body').notNullable();
+        table.unique(['aggregateId', 'aggregate', 'version']);
       });
     }
   }

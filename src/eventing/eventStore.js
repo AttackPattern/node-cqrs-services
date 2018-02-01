@@ -9,15 +9,24 @@ export default class EventStore {
     this.Event = bookshelf(db.knex('eventstore')).Model.extend({
       tableName: 'events'
     });
+    this.Snapshot = bookshelf(db.knex('eventstore')).Model.extend({
+      tableName: 'snapshots'
+    });
   }
 
   getEvents = async aggregateId => {
     try {
-      return (await this.Event
-        .where({ aggregate: this.aggregate, aggregateId: aggregateId })
-        .orderBy('sequenceNumber', 'asc')
-        .query()
-      ).map(e => this.mapper.fromStoredEvent(e));
+      return {
+        events: (await this.Event
+          .where({ aggregate: this.aggregate, aggregateId: aggregateId })
+          .orderBy('sequenceNumber', 'asc')
+          .query()
+        ).map(e => this.mapper.fromStoredEvent(e)),
+        snapshot: JSON.parse((await this.Snapshot
+          .where({ aggregate: this.aggregate, aggregateId: aggregateId })
+          .orderBy('version', 'desc')
+          .query())[0]?.body || '{}')
+      };
     }
     catch (e) {
       console.log('Error loading events', e);
@@ -40,5 +49,9 @@ export default class EventStore {
       console.log('Failed to save event', e);
       throw e;
     }
+  }
+
+  saveSnapshot = async ({ aggregate }) => {
+
   }
 }
