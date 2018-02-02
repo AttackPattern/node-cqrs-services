@@ -16,16 +16,26 @@ export default class EventStore {
 
   getEvents = async aggregateId => {
     try {
+      const snapshot = (await this.Snapshot
+        .where({ aggregate: this.aggregate, aggregateId: aggregateId })
+        .orderBy('version', 'desc')
+        .fetch()
+      )?.toJSON();
+      let eventQuery = this.Event
+        .where({ aggregate: this.aggregate })
+        .where({ aggregateId: aggregateId });
+      if (snapshot) {
+        eventQuery = eventQuery.where('sequenceNumber', '>', snapshot.version);
+      }
       return {
-        events: (await this.Event
-          .where({ aggregate: this.aggregate, aggregateId: aggregateId })
+        events: (await eventQuery
           .orderBy('sequenceNumber', 'asc')
           .query()
         ).map(e => this.mapper.fromStoredEvent(e)),
-        snapshot: JSON.parse((await this.Snapshot
-          .where({ aggregate: this.aggregate, aggregateId: aggregateId })
-          .orderBy('version', 'desc')
-          .query())[0]?.body || '{}')
+        snapshot: snapshot && {
+          version: snapshot.version,
+          body: JSON.parse(snapshot.body)
+        }
       };
     }
     catch (e) {
