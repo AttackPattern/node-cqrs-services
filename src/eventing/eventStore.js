@@ -20,7 +20,7 @@ export default class EventStore {
         .where({ aggregate: this.aggregate, aggregateId: aggregateId })
         .orderBy('version', 'desc')
         .fetch()
-      )?.toJSON();
+      ) ?.toJSON();
       let eventQuery = this.Event
         .where({ aggregate: this.aggregate })
         .where({ aggregateId: aggregateId });
@@ -61,7 +61,12 @@ export default class EventStore {
     }
   }
 
-  saveSnapshot = async ({ aggregate }) => {
-
+  saveSnapshot = async ({ id, version, ...body }) => {
+    await new this.Snapshot({
+      aggregate: this.aggregate,
+      aggregateId: id,
+      version,
+      body: JSON.stringify(body)
+    }).save();
   }
 }
