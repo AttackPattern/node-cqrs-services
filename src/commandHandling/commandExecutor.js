@@ -31,11 +31,12 @@ export default class CommandExecutor {
         });
       }
     }
-
+    const result = await handler.handle(command, aggregate);
     try {
-      const events = await handler.handle(command, aggregate);
+      let { events, ...body } = result;
+
       await this.repository.record(events);
-      return { id: aggregate.id };
+      return { id: aggregate.id, ...body };
     }
     catch (error) {
       throw new CommandHandlerError({ error, handler, aggregate });
