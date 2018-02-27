@@ -1,6 +1,6 @@
 {
   "name": "node-cqrs-services",
-  "version": "0.1",
+  "version": "0.1.0",
   "description": "Library of base classes for Node CQRS services implementation",
   "main": "index.js",
   "scripts": {
