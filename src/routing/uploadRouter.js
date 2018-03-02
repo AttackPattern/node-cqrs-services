@@ -14,16 +14,17 @@ export default class UploadRouter extends Router {
     });
 
     this.prefix('/upload')
-      .get('/signRequest', this.getSignedRequest);
+      .post('/signRequest', this.getSignedRequest);
   }
 
   getSignedRequest = async ctx => {
     const fileId = uuidV4();
-
+    const body = ctx.request.body;
+    let folder = body.folder && `${body.folder}/` || '';
     try {
-      let url = this.s3.getSignedUrl('putObject', {
+      let url = await this.s3.getSignedUrl('putObject', {
         Bucket: this.bucket,
-        Key: `${fileId}.jpg`,
+        Key: `${folder}${fileId}.jpg`,
         Expires: 60,
         ContentType: 'image/jpeg',
         ACL: 'public-read'
@@ -32,7 +33,7 @@ export default class UploadRouter extends Router {
       ctx.body = {
         fileId: fileId,
         signedRequest: url,
-        url: `https://${this.bucket}.s3.amazonaws.com/${fileId}.jpg`
+        url: `https://${this.bucket}.s3.amazonaws.com/${folder}${fileId}.jpg`
       };
     }
     catch (err) {
