@@ -16,24 +16,11 @@ export default class CommandExecutor {
       });
     }
 
-    let aggregate;
-    if (!aggregateId) {
-      aggregate = await this.repository.create();
-    }
-    else {
-      aggregate = await this.repository.get(aggregateId) ||
-        (handler.isCreateHandler && await this.repository.create(aggregateId));
-      if (!aggregate) {
-        throw new CommandHandlerError({
-          error: new Error(`${this.name} ${aggregateId} not found`),
-          handler,
-          aggregate
-        });
-      }
-    }
+    const aggregate = await this.getAggregate(handler, aggregateId);
+
     const result = await handler.handle(command, aggregate);
     try {
-      let { events, ...body } = result;
+      let { events, ...body } = result || {};
 
       await this.repository.record(events);
       return { id: aggregate.id, ...body };
@@ -41,5 +28,21 @@ export default class CommandExecutor {
     catch (error) {
       throw new CommandHandlerError({ error, handler, aggregate });
     }
+  }
+
+  getAggregate = async (handler, aggregateId) => {
+    if (!aggregateId) {
+      return await this.repository.create();
+    }
+    const aggregate = await this.repository.get(aggregateId) ||
+      (handler.isCreateHandler && await this.repository.create(aggregateId));
+    if (!aggregate) {
+      throw new CommandHandlerError({
+        error: new Error(`${this.name} ${aggregateId} not found`),
+        handler,
+        aggregate
+      });
+    }
+    return aggregate;
   }
 }
