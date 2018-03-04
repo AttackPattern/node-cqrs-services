@@ -11,22 +11,9 @@ export default class ScheduledCommandStore {
     });
   }
 
-  commands = async () => {
-    if (!this.storedCommands) {
-      this.storedCommands = new Set(await this.loadCommands());
-    }
+  push = command => this.recordCommand(command)
 
-    return [...this.storedCommands];
-  }
-
-  push = async command => {
-    this.storedCommands.add(await this.recordCommand(command));
-  }
-
-  complete = async command => {
-    await this.ScheduledCommands.where({ id: command.$scheduler.id }).destroy();
-    this.storedCommands.delete(command);
-  }
+  complete = command => this.ScheduledCommands.where({ id: command.$scheduler.id }).destroy()
 
   retry = async (command) => {
     let scheduledCommand = await this.ScheduledCommands.where({ id: command.$scheduler.id }).fetch();

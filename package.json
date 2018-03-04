@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/AttackPattern/node-cqrs-services#readme",
   "dependencies": {
+    "async": "2.6.0",
     "moment": "2.20.1",
     "uuid": "3.2.1",
     "koa-passport": "4.0.1"

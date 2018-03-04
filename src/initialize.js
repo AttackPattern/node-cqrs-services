@@ -15,7 +15,7 @@ import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { RealWorldClock, CommandScheduler, CommandScheduleTrigger, RoleMapping } from 'node-cqrs-lib';
+import { RealWorldClock, CommandScheduler, RoleMapping } from 'node-cqrs-lib';
 import ScheduledCommandStore from './scheduling/scheduledCommandStore';
 import ScheduledCommandStoreInitializer from './scheduling/scheduledCommandStoreInitializer';
 import DomainServices from './scheduling/domainServices';
@@ -115,10 +115,6 @@ export default class Services {
     let clock = new RealWorldClock();
     let commandStore = new ScheduledCommandStore(db, (service, commandName) => commands[service][commandName], () => new RealWorldClock());
     let commandScheduler = new CommandScheduler({ store: commandStore, clock, deliverer: domainCommandDeliverer });
-
-    let trigger = new CommandScheduleTrigger(commandScheduler, clock, 1000);
-    trigger.start();
-
     let domainServices = new DomainServices({ commandScheduler, repositories, clock });
 
     container.register('DomainServices', () => domainServices);
