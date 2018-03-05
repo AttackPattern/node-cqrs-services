@@ -5,7 +5,7 @@ export default class AuthStoreInitializer {
 
     let knex = db.knex('auth');
     if (!await knex.schema.hasTable('logins')) {
-      await knex.schema.createTableIfNotExists('logins', table => {
+      await knex.schema.createTable('logins', table => {
         table.bigIncrements('id').primary().notNullable();
         table.string('userId', 36).notNullable();
         table.string('username', 255).notNullable();

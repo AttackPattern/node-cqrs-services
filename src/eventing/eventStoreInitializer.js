@@ -5,7 +5,7 @@ export default class EventStoreInitializer {
 
     let knex = db.knex('eventstore');
     if (!await knex.schema.hasTable('events')) {
-      await knex.schema.createTableIfNotExists('events', table => {
+      await knex.schema.createTable('events', table => {
         table.bigIncrements('id').primary().notNullable();
         table.string('aggregate', 255).notNullable();
         table.string('aggregateId', 36).notNullable();
@@ -19,7 +19,7 @@ export default class EventStoreInitializer {
       });
     }
     if (!await knex.schema.hasTable('snapshots')) {
-      await knex.schema.createTableIfNotExists('snapshots', table => {
+      await knex.schema.createTable('snapshots', table => {
         table.bigIncrements('id').primary().notNullable();
         table.string('aggregate', 255).notNullable();
         table.string('aggregateId', 36).notNullable();

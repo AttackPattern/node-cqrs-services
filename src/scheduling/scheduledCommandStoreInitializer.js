@@ -6,7 +6,7 @@ export default class ScheduledCommandStoreInitializer {
     await db.knex().raw('CREATE DATABASE IF NOT EXISTS `scheduledcommands`');
     let scheduledCommands = db.knex('scheduledcommands').schema;
     if (!await scheduledCommands.hasTable('commands')) {
-      await scheduledCommands.createTableIfNotExists('commands', table => {
+      await scheduledCommands.createTable('commands', table => {
         table.bigIncrements('id').primary().notNullable();
         table.string('service', 255).notNullable();
         table.string('type', 255).notNullable();
