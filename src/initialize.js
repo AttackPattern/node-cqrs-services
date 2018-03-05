@@ -44,7 +44,8 @@ export default class Services {
           db: db,
           mapper: new EventMapper(name, aggregate.events)
         }),
-        aggregate: aggregate.aggregate
+        aggregate: aggregate.aggregate,
+        snapshots: config('eventStore').snapshots
       });
       return repos;
     }, {});
