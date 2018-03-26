@@ -18,8 +18,8 @@ export default class UploadRouter extends Router {
   }
 
   getSignedRequest = async ctx => {
-    const fileId = uuidV4();
     const body = ctx.request.body;
+    const fileId = body.fileId || uuidV4();
     let folder = body.folder && `${body.folder}/` || '';
     try {
       let url = await this.s3.getSignedUrl('putObject', {
