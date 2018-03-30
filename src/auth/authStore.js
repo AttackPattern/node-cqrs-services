@@ -75,10 +75,10 @@ export default class AuthStore {
     }
   }
 
-  changePassword = async ({ userId, password }) => {
+  changePassword = async ({ userId, password, status }) => {
     let hashedPassword = await bcrypt.hash(password, saltRounds);
     let user = await this.Login.where({ userId }).fetch();
-    await user.save({ password: hashedPassword, version: uuidV4(), status: 'active' }, { patch: true });
+    await user.save({ password: hashedPassword, version: uuidV4(), status: status || 'active' }, { patch: true });
   }
   enableUser = async ({ userId }) => this._setUserStatus({ userId, status: 'active' });
   suspendUser = async ({ userId }) => this._setUserStatus({ userId, status: 'suspended' });
