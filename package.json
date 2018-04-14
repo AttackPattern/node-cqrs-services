@@ -21,9 +21,9 @@
   "homepage": "https://github.com/AttackPattern/node-cqrs-services#readme",
   "dependencies": {
     "async": "2.6.0",
-    "moment": "2.20.1",
-    "uuid": "3.2.1",
-    "koa-passport": "4.0.1"
+    "koa-passport": "4.0.1",
+    "moment": "2.22.0",
+    "uuid": "3.2.1"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0-beta.40",
@@ -43,13 +43,14 @@
     "chai-as-promised": "7.1.1",
     "chai-datetime": "1.5.0",
     "del": "3.0.0",
-    "eslint": "4.15.0",
+    "eslint": "4.19.1",
+    "fancy-log": "1.3.2",
     "gulp": "4.0.0",
     "gulp-babel": "8.0.0-beta.0",
     "gulp-cached": "1.1.1",
     "gulp-changed": "3.2.0",
     "gulp-debug": "3.2.0",
-    "gulp-eslint": "4.0.1",
+    "gulp-eslint": "4.0.2",
     "gulp-if": "2.0.2",
     "gulp-istanbul": "1.1.3",
     "gulp-load-plugins": "~1.4.0",

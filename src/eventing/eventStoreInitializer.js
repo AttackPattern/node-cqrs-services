@@ -25,7 +25,7 @@ export default class EventStoreInitializer {
         table.string('aggregateId', 36).notNullable();
         table.integer('version').notNullable();
         table.dateTime('timestamp').defaultTo(knex.raw('now()'));
-        table.text('body').notNullable();
+        table.text('body', 'longtext').notNullable();
         table.unique(['aggregateId', 'aggregate', 'version']);
       });
     }

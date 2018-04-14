@@ -4,6 +4,7 @@ import BUILD_CONFIG from './buildConfig';
 
 import gulp from 'gulp';
 import loadPlugins from 'gulp-load-plugins';
+import log from 'fancy-log';
 
 import del from 'del';
 
@@ -56,7 +57,7 @@ function testScripts() {
         .pipe($.babel())
         .pipe($.mocha(BUILD_CONFIG.MOCHA))
         // .pipe($.istanbul.writeReports(BUILD_CONFIG.ISTANBUL.WRITE))
-        .on('error', () => $.util.log('unit tests failed...'));
+        .on('error', () => log('unit tests failed...'));
 }
 
 /*******************************************************************************
