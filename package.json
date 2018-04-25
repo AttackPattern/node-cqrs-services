@@ -24,7 +24,7 @@
     "koa-passport": "4.0.1",
     "moment": "2.22.0",
     "uuid": "3.2.1",
-    "node-cqrs-lib": "git+https://github.com/AttackPattern/node-cqrs-lib.git#1101c4a"
+    "@attackpattern/node-cqrs-lib": "0.6.0"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0-beta.40",
