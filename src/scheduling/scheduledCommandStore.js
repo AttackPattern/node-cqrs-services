@@ -1,4 +1,4 @@
-import { Schedule } from 'node-cqrs-lib';
+import { Schedule } from '@attackpattern/node-cqrs-lib';
 
 export default class ScheduledCommandStore {
 

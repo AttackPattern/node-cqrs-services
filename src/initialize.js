@@ -4,7 +4,6 @@ import passport from 'koa-passport';
 import AuthenticationRouter from './routing/authenticationRouter';
 import CommandRouter from './routing/commandRouter';
 import UploadRouter from './routing/uploadRouter';
-import { Identity, Repository } from 'node-cqrs-lib';
 import IdentityMiddleware from './routing/identityMiddleware';
 import CommandExecutor from './commandHandling/commandExecutor';
 import WebCommandHandler from './commandHandling/webCommandHandler';
@@ -15,7 +14,7 @@ import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { RealWorldClock, CommandScheduler, RoleMapping } from 'node-cqrs-lib';
+import { Identity, Repository, RealWorldClock, CommandScheduler, RoleMapping } from '@attackpattern/node-cqrs-lib';
 import ScheduledCommandStore from './scheduling/scheduledCommandStore';
 import ScheduledCommandStoreInitializer from './scheduling/scheduledCommandStoreInitializer';
 import DomainServices from './scheduling/domainServices';

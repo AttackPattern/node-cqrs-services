@@ -1,4 +1,4 @@
-import { Identity } from 'node-cqrs-lib';
+import { Identity } from '@attackpattern/node-cqrs-lib';
 
 export default class IdentityMiddleware {
   constructor(authTokenMapper) {

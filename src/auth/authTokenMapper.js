@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { Identity } from 'node-cqrs-lib';
+import { Identity } from '@attackpattern/node-cqrs-lib';
 
 class TokenExpiredError extends Error {
   name = 'TokenExpiredError';

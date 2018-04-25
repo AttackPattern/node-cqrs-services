@@ -1,4 +1,4 @@
-import { CommandHandlerError } from 'node-cqrs-lib';
+import { CommandHandlerError } from '@attackpattern/node-cqrs-lib';
 
 export default class CommandExecutor {
   constructor({ name, handlers, repository }) {
