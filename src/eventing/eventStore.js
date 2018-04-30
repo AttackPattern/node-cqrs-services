@@ -39,7 +39,7 @@ export default class EventStore {
       };
     }
     catch (e) {
-      console.log('Error loading events', e);
+      console.log(`Error loading events: Aggregate ${this.aggregate} ${aggregateId}`, e);
       throw e;
     }
   }
