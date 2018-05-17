@@ -21,6 +21,7 @@
   "homepage": "https://github.com/AttackPattern/node-cqrs-services#readme",
   "dependencies": {
     "async": "2.6.0",
+    "amqplib": "0.5.2",
     "koa-passport": "4.0.1",
     "moment": "2.22.0",
     "uuid": "3.2.1",

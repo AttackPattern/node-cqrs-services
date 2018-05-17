@@ -1,5 +1,6 @@
 import aws from 'aws-sdk';
 import passport from 'koa-passport';
+import ampq from 'amqplib';
 
 import AuthenticationRouter from './routing/authenticationRouter';
 import CommandRouter from './routing/commandRouter';
@@ -14,16 +15,13 @@ import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { Identity, Repository, RealWorldClock, CommandScheduler, RoleMapping } from '@attackpattern/node-cqrs-lib';
-import ScheduledCommandStore from './scheduling/scheduledCommandStore';
-import ScheduledCommandStoreInitializer from './scheduling/scheduledCommandStoreInitializer';
+import { Identity, Repository, RealWorldClock, RabbitScheduler, RoleMapping } from '@attackpattern/node-cqrs-lib';
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
   static initialize = async ({ container, config, db, domain, emailTemplates, decorateUser = i => i }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
-    await ScheduledCommandStoreInitializer.assureTables(db);
 
     function mapHandlers(handlers) {
       return Object.entries(handlers).map(({
@@ -35,7 +33,7 @@ export default class Services {
         }, {});
     }
 
-    let repositories = Object.entries(domain).reduce((repos, {
+    const repositories = Object.entries(domain).reduce((repos, {
       [0]: name, [1]: aggregate }) => {
       repos[name] = new Repository({
         eventStore: new EventStore({
@@ -49,7 +47,7 @@ export default class Services {
       return repos;
     }, {});
 
-    let executors = Object.entries(domain).map(({
+    const executors = Object.entries(domain).map(({
       [0]: aggregateName, [1]: aggregate }) =>
       new CommandExecutor({
         name: aggregateName,
@@ -58,16 +56,9 @@ export default class Services {
       })
     );
 
-    let commands = Object.entries(domain)
-      .reduce((result, {
-        [0]: aggregateName, [1]: aggregate }) => {
-        result[aggregateName] = aggregate.commands;
-        return result;
-      }, {});
+    const authStore = await AuthStore.create({ db, roleMapping: new RoleMapping(config('roles').roles) });
 
-    let authStore = await AuthStore.create({ db, roleMapping: new RoleMapping(config('roles').roles) });
-
-    let authTokenMapper = new AuthTokenMapper({
+    const authTokenMapper = new AuthTokenMapper({
       authStore,
       secret: config.decrypt(config('authentication').secret),
       expiration: config('authentication').expiration
@@ -80,7 +71,7 @@ export default class Services {
       secretAccessKey: config('aws').SecretAccessKey && config.decrypt(config('aws').SecretAccessKey)
     });
 
-    let notifications = new AwsSNS({
+    const notifications = new AwsSNS({
       applicationArns: {
         ios: config('aws').IOS_APP_ARN,
         android: config('aws').ANDROID_APP_ARN
@@ -99,7 +90,7 @@ export default class Services {
       }
     };
 
-    let emailer = new Emailer({
+    const emailer = new Emailer({
       sender: (config('aws').Test || []).includes('email') ?
         stubSES :
         new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }),
@@ -107,15 +98,17 @@ export default class Services {
     });
     container.register('Emailer', () => emailer);
 
-    let secretCodes = new SecretCodes();
+    const secretCodes = new SecretCodes();
     container.register('SecretCodes', () => secretCodes);
     container.register('AuthStore', () => authStore);
 
-    let domainCommandDeliverer = new DomainCommandHandler(executors);
-    let clock = new RealWorldClock();
-    let commandStore = new ScheduledCommandStore(db, (service, commandName) => commands[service][commandName], () => new RealWorldClock());
-    let commandScheduler = new CommandScheduler({ store: commandStore, clock, deliverer: domainCommandDeliverer });
-    let domainServices = new DomainServices({ commandScheduler, repositories, clock });
+    const domainCommandDeliverer = new DomainCommandHandler(executors);
+    const clock = new RealWorldClock();
+
+    const channel = await (await ampq.connect('amqp://rabbit')).createChannel();
+
+    const commandScheduler = new RabbitScheduler({ channel: channel, clock, deliverer: domainCommandDeliverer });
+    const domainServices = new DomainServices({ commandScheduler, repositories, clock });
 
     container.register('DomainServices', () => domainServices);
 
