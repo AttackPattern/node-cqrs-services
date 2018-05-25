@@ -33,19 +33,19 @@ export default class Services {
         }, {});
     }
 
-    const repositories = Object.entries(domain).reduce((repos, {
-      [0]: name, [1]: aggregate }) => {
-      repos[name] = new Repository({
-        eventStore: new EventStore({
-          aggregate: name,
-          db: db,
-          mapper: new EventMapper(name, aggregate.events)
-        }),
-        aggregate: aggregate.aggregate,
-        snapshots: config('eventStore').snapshots
-      });
-      return repos;
-    }, {});
+    const repositories = Object.entries(domain).reduce(
+      (repos, { [0]: name, [1]: aggregate }) => {
+        repos[name] = new Repository({
+          eventStore: new EventStore({
+            aggregate: name,
+            db: db,
+            mapper: new EventMapper(name, aggregate.events)
+          }),
+          aggregate: aggregate.aggregate,
+          snapshots: config('eventStore').snapshots
+        });
+        return repos;
+      }, {});
 
     const executors = Object.entries(domain).map(({
       [0]: aggregateName, [1]: aggregate }) =>

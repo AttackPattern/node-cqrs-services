@@ -11,22 +11,21 @@ export default class CommandExecutor {
     const handler = this.handlers[commandType] && this.handlers[commandType]();
     if (!handler) {
       throw new CommandHandlerError({
-        error: new Error(`Unknown command ${commandType}`),
-        aggregate
+        message: `Unknown command ${commandType}`
       });
     }
 
     const aggregate = await this.getAggregate(handler, aggregateId);
-
-    const result = await handler.handle(command, aggregate);
     try {
+      const result = await handler.handle(command, aggregate);
       let { events, ...body } = result || {};
 
       await this.repository.record(events);
       return { id: aggregate.id, ...body };
     }
     catch (error) {
-      throw new CommandHandlerError({ error, handler, aggregate });
+      error.handler = handler;
+      throw error;
     }
   }
 
@@ -38,7 +37,7 @@ export default class CommandExecutor {
       (handler.isCreateHandler && await this.repository.create(aggregateId));
     if (!aggregate) {
       throw new CommandHandlerError({
-        error: new Error(`${this.name} ${aggregateId} not found`),
+        message: `${this.name} ${aggregateId} not found`,
         handler,
         aggregate
       });

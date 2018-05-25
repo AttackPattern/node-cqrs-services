@@ -1,4 +1,5 @@
 import uuidValidate from 'uuid-validate';
+import { ValidationError, AuthorizationError } from '@attackpattern/node-cqrs-lib';
 
 export default class WebCommandHandler {
   constructor(domainCommandDeliverer) {
@@ -33,25 +34,21 @@ export default class WebCommandHandler {
     }
   }
 
-  handleError(ctx, e) {
-    if (!e.error) {
-      console.log('Unexpected exception');
-      ctx.status = 500;
-    }
-    // TODO (brett): get the typecheck working
-    else if (e.error.name === 'ValidationError') {
+  handleError(ctx, error) {
+    if (error instanceof ValidationError) {
       console.log('Validation failure');
       ctx.status = 400;
     }
-    else if (e.error.name === 'AuthorizationError') {
+    else if (error instanceof AuthorizationError) {
       console.log('Authorization failure');
       ctx.status = 403;
     }
     else {
-      ctx.status = 404;
+      console.log('Unexpected exception');
+      ctx.status = 500;
     }
 
-    ctx.body = { error: e.error ? e.error.message : e.message };
-    console.dir(e);
+    ctx.body = { error: error ?.message };
+    console.log(error);
   }
 }
