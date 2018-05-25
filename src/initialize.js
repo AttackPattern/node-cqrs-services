@@ -105,7 +105,7 @@ export default class Services {
     const domainCommandDeliverer = new DomainCommandHandler(executors);
     const clock = new RealWorldClock();
 
-    const channel = await (await ampq.connect('amqp://rabbit')).createChannel();
+    const channel = await (await ampq.connect(`${config('scheduledCommands').store}`)).createChannel();
 
     const commandScheduler = new RabbitScheduler({ channel: channel, clock, deliverer: domainCommandDeliverer });
     const domainServices = new DomainServices({ commandScheduler, repositories, clock });
