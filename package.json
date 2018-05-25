@@ -1,6 +1,6 @@
 {
   "name": "@attackpattern/node-cqrs-services",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Library of base classes for Node CQRS services implementation",
   "main": "index.js",
   "scripts": {
@@ -21,10 +21,11 @@
   "homepage": "https://github.com/AttackPattern/node-cqrs-services#readme",
   "dependencies": {
     "async": "2.6.0",
+    "amqplib": "0.5.2",
     "koa-passport": "4.0.1",
     "moment": "2.22.0",
     "uuid": "3.2.1",
-    "@attackpattern/node-cqrs-lib": "0.6.0"
+    "@attackpattern/node-cqrs-lib": "0.7.0"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0-beta.40",

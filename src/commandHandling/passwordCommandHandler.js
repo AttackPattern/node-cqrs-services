@@ -1,3 +1,5 @@
+import { ValidationError, AuthorizationError } from '@attackpattern/node-cqrs-lib';
+
 export default class PasswordCommandHandler {
   constructor(domainCommandDeliverer, authStore) {
     this.domainCommandDeliverer = domainCommandDeliverer;
@@ -36,21 +38,22 @@ export default class PasswordCommandHandler {
       ctx.status = 200;
       return;
     }
-    catch (e) {
-      if (e.error.name === 'ValidationError') {
+    catch (error) {
+      if (error instanceof ValidationError) {
         console.log('Validation failure');
         ctx.status = 400;
       }
-      else if (e.error.name === 'AuthorizationError') {
+      else if (error instanceof AuthorizationError) {
         console.log('Authorization failure');
         ctx.status = 403;
       }
       else {
-        ctx.status = 404;
+        console.log('Unexpected exception');
+        ctx.status = 500;
       }
 
-      console.dir(e);
-      ctx.body = { error: e.error ? e.error.message : e.message };
+      ctx.body = { error: error ?.message };
+      console.log(error);
     }
   }
 }
