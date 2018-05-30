@@ -105,9 +105,25 @@ export default class Services {
     const domainCommandDeliverer = new DomainCommandHandler(executors);
     const clock = new RealWorldClock();
 
-    const channel = await (await ampq.connect(`${config('scheduledCommands').store}`)).createChannel();
+    function connectRabbit(store) {
+      return new Promise(resolve => {
+        function retry() {
+          ampq.connect(store)
+            .then(c => {
+              console.log('connected to rabbit');
+              resolve(c);
+            })
+            .catch(() => {
+              console.log('retry connect to rabbit');
+              setTimeout(retry, 500);
+            });
+        }
+        retry();
+      });
+    }
 
-    const commandScheduler = new RabbitScheduler({ channel: channel, clock, deliverer: domainCommandDeliverer });
+    const scheduledCommandChannel = await (await connectRabbit(config('scheduledCommands').store)).createChannel();
+    const commandScheduler = new RabbitScheduler({ channel: scheduledCommandChannel, clock, deliverer: domainCommandDeliverer });
     const domainServices = new DomainServices({ commandScheduler, repositories, clock });
 
     container.register('DomainServices', () => domainServices);
