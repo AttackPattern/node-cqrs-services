@@ -110,11 +110,10 @@ export default class Services {
         function retry() {
           ampq.connect(store)
             .then(c => {
-              console.log('connected to rabbit');
+              console.log('Connected to rabbit');
               resolve(c);
             })
             .catch(() => {
-              console.log('retry connect to rabbit');
               setTimeout(retry, 500);
             });
         }
