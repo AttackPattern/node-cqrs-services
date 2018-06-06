@@ -12,7 +12,7 @@ export default class DomainServices {
 
   create = async ({ aggregate, target, command }) => {
     let id = target || uuidV4();
-    await this.scheduleCommand({ service: aggregate, target: id, command });
+    await this.executeCommand({ service: aggregate, target: id, command });
     return id;
   }
 
