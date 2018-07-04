@@ -15,8 +15,8 @@ export default class CommandExecutor {
       });
     }
 
-    const aggregate = await this.getAggregate(handler, aggregateId);
     try {
+      const aggregate = await this.getAggregate(handler, aggregateId);
       const result = await handler.handle(command, aggregate);
       let { events, ...body } = result || {};
 
@@ -28,6 +28,7 @@ export default class CommandExecutor {
       throw error;
     }
   }
+
 
   getAggregate = async (handler, aggregateId) => {
     if (!aggregateId) {
