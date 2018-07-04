@@ -7,8 +7,6 @@ export default class WebCommandHandler {
   }
 
   handleCommand = async ctx => {
-    console.log('start handle');
-    console.log('i mean it');
     const command = ctx.request.body;
     command.$position = ctx.$position;
     command.$identity = ctx.$identity;

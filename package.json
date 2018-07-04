@@ -1,6 +1,6 @@
 {
   "name": "@attackpattern/node-cqrs-services",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Library of base classes for Node CQRS services implementation",
   "main": "index.js",
   "scripts": {
