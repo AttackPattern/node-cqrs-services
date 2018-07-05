@@ -1,5 +1,5 @@
 import uuidValidate from 'uuid-validate';
-import { ValidationError, AuthorizationError } from '@attackpattern/node-cqrs-lib';
+import { ValidationError, AuthorizationError, CommandHandlerError } from '@attackpattern/node-cqrs-lib';
 
 export default class WebCommandHandler {
   constructor(domainCommandDeliverer) {
@@ -42,6 +42,10 @@ export default class WebCommandHandler {
     else if (error instanceof AuthorizationError) {
       console.log('Authorization failure');
       ctx.status = 403;
+    }
+    else if (error instanceof CommandHandlerError) {
+      console.log('Error handling command');
+      ctx.status = 500;
     }
     else {
       console.log('Unexpected exception');
