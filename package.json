@@ -1,6 +1,6 @@
 {
   "name": "@attackpattern/node-cqrs-services",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Library of base classes for Node CQRS services implementation",
   "main": "index.js",
   "scripts": {
@@ -25,7 +25,7 @@
     "koa-passport": "4.0.1",
     "moment": "2.22.0",
     "uuid": "3.2.1",
-    "@attackpattern/node-cqrs-lib": "0.7.3"
+    "@attackpattern/node-cqrs-lib": "0.7.4"
   },
   "devDependencies": {
     "@babel/cli": "7.0.0-beta.51",
