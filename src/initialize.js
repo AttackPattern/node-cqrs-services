@@ -15,7 +15,7 @@ import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { Identity, Repository, RealWorldClock, RabbitScheduler, RoleMapping } from '@attackpattern/node-cqrs-lib';
+import { Identity, Repository, RealWorldClock, RabbitScheduler, RoleMapping } from '@facetdev/node-cqrs-lib';
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {

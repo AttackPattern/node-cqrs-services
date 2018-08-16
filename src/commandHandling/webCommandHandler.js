@@ -1,5 +1,5 @@
 import uuidValidate from 'uuid-validate';
-import { ValidationError, AuthorizationError, CommandHandlerError } from '@attackpattern/node-cqrs-lib';
+import { ValidationError, AuthorizationError, CommandHandlerError } from '@facetdev/node-cqrs-lib';
 
 export default class WebCommandHandler {
   constructor(domainCommandDeliverer) {

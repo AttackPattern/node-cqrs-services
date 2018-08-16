@@ -1,4 +1,4 @@
-import { ValidationError, AuthorizationError } from '@attackpattern/node-cqrs-lib';
+import { ValidationError, AuthorizationError } from '@facetdev/node-cqrs-lib';
 
 export default class PasswordCommandHandler {
   constructor(domainCommandDeliverer, authStore) {

@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import uuidV4 from 'uuid/v4';
 import AuthStoreInitializer from './authStoreInitializer';
-import { Identity } from '@attackpattern/node-cqrs-lib';
+import { Identity } from '@facetdev/node-cqrs-lib';
 
 let saltRounds = 10;
 
