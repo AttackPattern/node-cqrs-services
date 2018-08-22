@@ -4,7 +4,8 @@ import ampq from 'amqplib';
 
 import AuthenticationRouter from './routing/authenticationRouter';
 import CommandRouter from './routing/commandRouter';
-import UploadRouter from './routing/uploadRouter';
+import GoogleUploadRouter from './routing/uploadGCPRouter';
+
 import IdentityMiddleware from './routing/identityMiddleware';
 import CommandExecutor from './commandHandling/commandExecutor';
 import WebCommandHandler from './commandHandling/webCommandHandler';
@@ -126,9 +127,12 @@ export default class Services {
     const domainServices = new DomainServices({ commandScheduler, repositories, clock });
 
     container.register('DomainServices', () => domainServices);
+    ;
+    const googleUploadRouter = new GoogleUploadRouter({
+      GCP_Bucket: config('google').GCP_Bucket,
+      private_key: config.decrypt(config('google-image-cert').private_key),
+      client_email: config('google-image-cert').client_email
 
-    const uploadRouter = new UploadRouter({
-      S3_Bucket: config('aws').S3_Bucket
     });
     const commandRouter = new CommandRouter({ webHandler: new WebCommandHandler(domainCommandDeliverer) });
 
@@ -143,7 +147,7 @@ export default class Services {
 
     return {
       routers: {
-        upload: uploadRouter,
+        upload: googleUploadRouter,
         command: commandRouter,
         auth: authRouter
       },
