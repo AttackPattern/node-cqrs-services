@@ -4,7 +4,7 @@ import ampq from 'amqplib';
 
 import AuthenticationRouter from './routing/authenticationRouter';
 import CommandRouter from './routing/commandRouter';
-import UploadRouter from './routing/uploadRouter';
+
 import IdentityMiddleware from './routing/identityMiddleware';
 import CommandExecutor from './commandHandling/commandExecutor';
 import WebCommandHandler from './commandHandling/webCommandHandler';
@@ -127,9 +127,6 @@ export default class Services {
 
     container.register('DomainServices', () => domainServices);
 
-    const uploadRouter = new UploadRouter({
-      S3_Bucket: config('aws').S3_Bucket
-    });
     const commandRouter = new CommandRouter({ webHandler: new WebCommandHandler(domainCommandDeliverer) });
 
     const passwordHandler = new PasswordCommandHandler(domainCommandDeliverer, authStore);
@@ -143,7 +140,6 @@ export default class Services {
 
     return {
       routers: {
-        upload: uploadRouter,
         command: commandRouter,
         auth: authRouter
       },
