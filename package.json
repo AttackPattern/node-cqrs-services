@@ -22,6 +22,8 @@
   "dependencies": {
     "async": "2.6.0",
     "amqplib": "0.5.2",
+    "aws-sdk": "2.299.0",
+    "es-promisify": "1.1.2",
     "koa-passport": "4.0.1",
     "moment": "2.22.0",
     "uuid": "3.2.1",
