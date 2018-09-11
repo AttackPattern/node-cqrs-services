@@ -19,7 +19,7 @@ import { Identity, Repository, RealWorldClock, RabbitScheduler, RoleMapping } fr
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
-  static initialize = async ({ container, config, db, domain, emailTemplates, decorateUser = i => i }) => {
+  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, decorateUser = i => i }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
 
@@ -33,19 +33,23 @@ export default class Services {
         }, {});
     }
 
-    const eventMapper = new EventMapper(Object.entries(domain).reduce((events, [name, aggregate]) => {
-      events[name] = aggregate.events;
-      return events;
-    }, {}));
+    const eventStore = new EventStore({
+      db: db,
+      mapper: new EventMapper(Object.entries(domain).reduce((events, [name, aggregate]) => {
+        events[name] = aggregate.events;
+        return events;
+      }, {}))
+    });
+
+    if (bootstrap ?.events && await eventStore.count() === 0) {
+      console.log('bootstrapping events');
+      await eventStore.record(bootstrap.events());
+    }
 
     const repositories = Object.entries(domain).reduce(
       (repos, [name, aggregate]) => {
         repos[name] = new Repository({
-          eventStore: new EventStore({
-            aggregate: name,
-            db: db,
-            mapper: eventMapper
-          }),
+          eventStore: eventStore,
           aggregateType: name,
           constructor: aggregate.aggregate,
           snapshots: config('eventStore').snapshots
@@ -62,6 +66,11 @@ export default class Services {
     );
 
     const authStore = await AuthStore.create({ db, roleMapping: new RoleMapping(config('roles').roles) });
+
+    if (bootstrap?.users && await authStore.count() === 0) {
+      console.log('bootstrapping users');
+      await Promise.all(bootstrap.users().map(async user => await authStore.addLogin(user) || []));
+    }
 
     const authTokenMapper = new AuthTokenMapper({
       authStore,

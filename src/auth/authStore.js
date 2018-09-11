@@ -93,6 +93,8 @@ export default class AuthStore {
       throw e;
     }
   }
+
+  count = () => this.Login.count();
 }
 
 function merge(target = {}, values = {}) {

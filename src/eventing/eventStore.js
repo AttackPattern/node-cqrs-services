@@ -59,6 +59,8 @@ export default class EventStore {
     }
   }
 
+  count = () => this.Event.count();
+
   saveSnapshot = async (aggregateType, { id, version, ...body }) => {
     await new this.Snapshot({
       aggregate: aggregateType,
