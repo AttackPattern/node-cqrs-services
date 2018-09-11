@@ -1,13 +1,12 @@
 export default class EventMapper {
-  constructor(aggregate, events) {
-    this.aggregate = aggregate;
+  constructor(events) {
     this.events = events;
   }
 
   toStoredEvent = event => {
     let { aggregate, aggregateId, type, sequenceNumber, timestamp, actor, position, ...body } = event;
     return {
-      aggregate: this.aggregate,
+      aggregate: aggregate,
       aggregateId: aggregateId,
       type: type || name,
       sequenceNumber: sequenceNumber,
@@ -19,7 +18,7 @@ export default class EventMapper {
 
   fromStoredEvent = event => {
     try {
-      let Event = this.events[event.type];
+      let Event = this.events[event.aggregate][event.type];
       return new Event({
         aggregate: event.aggregate,
         aggregateId: event.aggregateId,

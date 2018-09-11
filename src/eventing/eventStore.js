@@ -2,8 +2,7 @@ import eachSeries from 'async/eachSeries';
 import bookshelf from 'bookshelf';
 
 export default class EventStore {
-  constructor({ aggregate = '', mapper, db }) {
-    this.aggregate = aggregate;
+  constructor({ mapper, db }) {
     this.mapper = mapper;
 
     this.Event = bookshelf(db.knex('eventstore')).Model.extend({
@@ -14,16 +13,15 @@ export default class EventStore {
     });
   }
 
-  getEvents = async aggregateId => {
+  getEvents = async ({ aggregateType, aggregateId }) => {
     try {
       const snapshot = (await this.Snapshot
-        .where({ aggregate: this.aggregate, aggregateId: aggregateId })
+        .where({ aggregate: aggregateType, aggregateId })
         .orderBy('version', 'desc')
         .fetch()
       ) ?.toJSON();
       let eventQuery = this.Event
-        .where({ aggregate: this.aggregate })
-        .where({ aggregateId: aggregateId });
+        .where({ aggregate: aggregateType, aggregateId });
       if (snapshot) {
         eventQuery = eventQuery.where('sequenceNumber', '>', snapshot.version);
       }
@@ -39,7 +37,7 @@ export default class EventStore {
       };
     }
     catch (e) {
-      console.log(`Error loading events: Aggregate ${this.aggregate} ${aggregateId}`, e);
+      console.log(`Error loading events: Aggregate ${aggregateType} ${aggregateId}`, e);
       throw e;
     }
   }
@@ -61,9 +59,9 @@ export default class EventStore {
     }
   }
 
-  saveSnapshot = async ({ id, version, ...body }) => {
+  saveSnapshot = async (aggregateType, { id, version, ...body }) => {
     await new this.Snapshot({
-      aggregate: this.aggregate,
+      aggregate: aggregateType,
       aggregateId: id,
       version,
       body: JSON.stringify(body)

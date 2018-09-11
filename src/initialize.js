@@ -33,22 +33,27 @@ export default class Services {
         }, {});
     }
 
+    const eventMapper = new EventMapper(Object.entries(domain).reduce((events, [name, aggregate]) => {
+      events[name] = aggregate.events;
+      return events;
+    }, {}));
+
     const repositories = Object.entries(domain).reduce(
-      (repos, { [0]: name, [1]: aggregate }) => {
+      (repos, [name, aggregate]) => {
         repos[name] = new Repository({
           eventStore: new EventStore({
             aggregate: name,
             db: db,
-            mapper: new EventMapper(name, aggregate.events)
+            mapper: eventMapper
           }),
-          aggregate: aggregate.aggregate,
+          aggregateType: name,
+          constructor: aggregate.aggregate,
           snapshots: config('eventStore').snapshots
         });
         return repos;
       }, {});
 
-    const executors = Object.entries(domain).map(({
-      [0]: aggregateName, [1]: aggregate }) =>
+    const executors = Object.entries(domain).map(([aggregateName, aggregate]) =>
       new CommandExecutor({
         name: aggregateName,
         handlers: mapHandlers(aggregate.handlers),
