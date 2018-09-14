@@ -13,7 +13,7 @@ export default class AuthStore {
     let store = new AuthStore();
     store.getIdentity = id => ({
       ...new Identity(id),
-      rights: roleMapping.getCapabilities(id.claims.roles)
+      rights: roleMapping.getCapabilities(id.claims.roles || [])
     });
     store.Login = require('bookshelf')(db.knex('auth')).Model.extend({
       tableName: 'logins'
@@ -48,7 +48,8 @@ export default class AuthStore {
       if (user) {
         user.claims = user.claims || { roles: [] };
       }
-      return user && this.getIdentity(user);
+
+      return user ? this.getIdentity(user) : null;
     }
     catch (e) {
       console.log('Could not find user', e);
@@ -99,11 +100,10 @@ export default class AuthStore {
 
 function merge(target = {}, values = {}) {
   return Object.entries(values)
-    .map(entry => ({ key: entry[0], value: entry[1] }))
-    .reduce((result, entry) => {
-      result[entry.key] = Array.isArray(entry.value) ?
-        Array.from(new Set(result[entry.key] ? entry.value.concat(result[entry.key]) : entry.value)) :
-        entry.value;
+    .reduce((result, [ key, value ]) => {
+      result[key] = Array.isArray(value) ?
+        Array.from(new Set(result[key] ? value.concat(result[key]) : value)) :
+        value;
 
       return result;
     }, target);
