@@ -51,7 +51,7 @@ export default class Services {
           sequenceNumber: result.sequence[event.aggregateId]
         });
         return result;
-      }), {sequence: {}, events: []}).events;
+      }), { sequence: {}, events: [] }).events;
       await eventStore.record(events.map(ev => ({
         ...ev,
         actor: 'bootstrap'
@@ -79,7 +79,7 @@ export default class Services {
 
     const authStore = await AuthStore.create({ db, roleMapping: new RoleMapping(config('roles').roles) });
 
-    if (bootstrap?.users && await authStore.count() === 0) {
+    if (bootstrap ?.users && await authStore.count() === 0) {
       console.log('bootstrapping users');
       await Promise.all(bootstrap.users().map(async user => await authStore.addLogin(user) || []));
     }
