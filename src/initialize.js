@@ -43,7 +43,19 @@ export default class Services {
 
     if (bootstrap ?.events && await eventStore.count() === 0) {
       console.log('bootstrapping events');
-      await eventStore.record(bootstrap.events());
+      const events = bootstrap.events().reduce(((result, event) => {
+        result.sequence[event.aggregateId] = (result.sequence[event.aggregateId] || 0) + 1;
+        result.events.push({
+          ...event,
+          actor: 'bootstrap',
+          sequenceNumber: result.sequence[event.aggregateId]
+        });
+        return result;
+      }), {sequence: {}, events: []}).events;
+      await eventStore.record(events.map(ev => ({
+        ...ev,
+        actor: 'bootstrap'
+      })));
     }
 
     const repositories = Object.entries(domain).reduce(
