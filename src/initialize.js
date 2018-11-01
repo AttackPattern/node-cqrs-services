@@ -81,7 +81,9 @@ export default class Services {
 
     if (bootstrap ?.users && await authStore.count() === 0) {
       console.log('bootstrapping users');
-      await Promise.all(bootstrap.users().map(async user => await authStore.addLogin(user) || []));
+      for (const user of bootstrap.users()) {
+        await authStore.addLogin(user);
+      }
     }
 
     const authTokenMapper = new AuthTokenMapper({
