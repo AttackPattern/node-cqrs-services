@@ -19,7 +19,7 @@ import { Identity, Repository, RealWorldClock, RabbitScheduler } from '@facetdev
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
-  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, decorateUser = i => i, identityMapper }) => {
+  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, decorateUser = i => i, identityMapper = token => new Identity(token) }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
 
@@ -91,7 +91,8 @@ export default class Services {
     const authTokenMapper = new AuthTokenMapper({
       authStore,
       secret: config.decrypt(config('authentication').secret),
-      expiration: config('authentication').expiration
+      expiration: config('authentication').expiration,
+      identityMapper
     });
     container.register('systemIdentity', () => authTokenMapper.sign(Identity.system));
 

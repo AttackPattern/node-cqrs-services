@@ -1,15 +1,15 @@
 import jwt from 'jsonwebtoken';
-import { Identity } from '@facetdev/node-cqrs-lib';
 
 class TokenExpiredError extends Error {
   name = 'TokenExpiredError';
 }
 
 export default class AuthTokenMapper {
-  constructor({ authStore, secret, expiration }) {
+  constructor({ authStore, secret, expiration, identityMapper }) {
     this.authStore = authStore;
     this.secret = secret;
     this.expiration = expiration;
+    this.identityMapper = identityMapper;
   }
 
   sign(identity) {
@@ -29,7 +29,7 @@ export default class AuthTokenMapper {
   verify = async token => {
     let { identity: identityToken, refresh } = await jwt.verify(token, this.secret);
     try {
-      let identity = new Identity(await jwt.verify(identityToken, this.secret));
+      let identity = this.identityMapper(await jwt.verify(identityToken, this.secret));
       return {
         identity,
         token
