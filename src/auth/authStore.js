@@ -1,20 +1,16 @@
 import bcrypt from 'bcrypt';
 import uuidV4 from 'uuid/v4';
 import AuthStoreInitializer from './authStoreInitializer';
-import { Identity } from '@facetdev/node-cqrs-lib';
 
 let saltRounds = 10;
 
 export default class AuthStore {
 
-  static create = async ({ db, roleMapping }) => {
+  static create = async ({ db, identityMapper }) => {
     await AuthStoreInitializer.assureTables(db);
 
     let store = new AuthStore();
-    store.getIdentity = id => ({
-      ...new Identity(id),
-      rights: roleMapping.getCapabilities(id.claims.roles || [])
-    });
+    store.getIdentity = user => identityMapper(user);
     store.Login = require('bookshelf')(db.knex('auth')).Model.extend({
       tableName: 'logins'
     });
@@ -22,17 +18,22 @@ export default class AuthStore {
     return store;
   }
 
-  addLogin = async ({ userId, username, password, claims = { roles: [] }, status = 'active' }) => {
+  addUser = async ({ userId, username, password, claims, updateClaims = claims => claims, status = 'active' }) => {
     try {
       let hashedPassword = await bcrypt.hash(password, saltRounds);
       let user = (await this.Login.where({ username }).fetch({ columns: ['id', 'userId', 'username', 'claims'] }));
       if (!user) {
         console.log('adding new user', username);
-        await new this.Login().save({ userId, username, password: hashedPassword, claims: JSON.stringify(claims), version: uuidV4(), status });
+        await new this.Login().save({ userId, username, password: hashedPassword, claims: JSON.stringify({ ...claims, ...updateClaims({}) }), version: uuidV4(), status });
       }
       else {
-        console.log(`updating user ${username}`, user.get('claims'), claims);
-        await user.save({ userId, password: hashedPassword, claims: JSON.stringify(merge(user.get('claims'), claims) || {}), version: uuidV4() }, { patch: true });
+        console.log('updating user', username);
+        await user.save({
+          userId,
+          password: hashedPassword,
+          claims: JSON.stringify({ ...user.get('claims'), ...claims, ...updateClaims(user.get('claims') || {}) } || {}),
+          version: uuidV4()
+        }, { patch: true });
       }
     }
     catch (e) {
@@ -57,22 +58,11 @@ export default class AuthStore {
     }
   }
 
-  checkLogin = async (username, password) => {
+  checkLogin = async ({ username, password }) => {
     let userRecords = await this.Login.where({ username }).where('status', '<>', 'suspended').query();
     let user = userRecords.length && userRecords[0];
     if (user && await bcrypt.compare(password, user.password)) {
       return { ...this.getIdentity(user), status: user.status };
-    }
-  }
-
-  addClaims = async ({ userId, claims }) => {
-    try {
-      let user = await this.Login.where({ userId }).fetch();
-      await user.save({ claims: JSON.stringify(merge(user.get('claims') || {}, claims)), version: uuidV4() }, { patch: true });
-    }
-    catch (e) {
-      console.log('Error updating roles', e);
-      throw e;
     }
   }
 
@@ -81,6 +71,7 @@ export default class AuthStore {
     let user = await this.Login.where({ userId }).fetch();
     await user.save({ password: hashedPassword, version: uuidV4(), status: status || 'active' }, { patch: true });
   }
+
   enableUser = async ({ userId }) => this._setUserStatus({ userId, status: 'active' });
   suspendUser = async ({ userId }) => this._setUserStatus({ userId, status: 'suspended' });
 
@@ -100,7 +91,7 @@ export default class AuthStore {
 
 function merge(target = {}, values = {}) {
   return Object.entries(values)
-    .reduce((result, [ key, value ]) => {
+    .reduce((result, [key, value]) => {
       result[key] = Array.isArray(value) ?
         Array.from(new Set(result[key] ? value.concat(result[key]) : value)) :
         value;

@@ -30,7 +30,7 @@ export default class AuthenticationRouter extends Router {
   }
 
   authenticate = async (username, password, done) => {
-    let foundUser = await this.authStore.checkLogin(username, password);
+    let foundUser = await this.authStore.checkLogin({username, password});
     done(!foundUser && 'User not found', foundUser);
   }
 }

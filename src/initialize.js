@@ -15,18 +15,17 @@ import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { Identity, Repository, RealWorldClock, RabbitScheduler, RoleMapping } from '@facetdev/node-cqrs-lib';
+import { Identity, Repository, RealWorldClock, RabbitScheduler } from '@facetdev/node-cqrs-lib';
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
-  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, decorateUser = i => i }) => {
+  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, decorateUser = i => i, identityMapper }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
 
     function mapHandlers(handlers) {
-      return Object.entries(handlers).map(({
-        [0]: handlerName, [1]: handler }) =>
-        ({ name: handlerName, handler: () => container.resolve(handler) }))
+      return Object.entries(handlers).map(([handlerName, handler]) =>
+          ({ name: handlerName, handler: () => container.resolve(handler) }))
         .reduce((result, item) => {
           result[item.name] = item.handler;
           return result;
@@ -41,9 +40,9 @@ export default class Services {
       }, {}))
     });
 
-    if (bootstrap ?.events && await eventStore.count() === 0) {
+    if (bootstrap?.events && await eventStore.count() === 0) {
       console.log('bootstrapping events');
-      const events = bootstrap.events().reduce(((result, event) => {
+      const events = bootstrap.events().reduce((result, event) => {
         result.sequence[event.aggregateId] = (result.sequence[event.aggregateId] || 0) + 1;
         result.events.push({
           ...event,
@@ -51,7 +50,7 @@ export default class Services {
           sequenceNumber: result.sequence[event.aggregateId]
         });
         return result;
-      }), { sequence: {}, events: [] }).events;
+      }, { sequence: {}, events: [] }).events;
       await eventStore.record(events.map(ev => ({
         ...ev,
         actor: 'bootstrap'
@@ -77,12 +76,15 @@ export default class Services {
       })
     );
 
-    const authStore = await AuthStore.create({ db, roleMapping: new RoleMapping(config('roles').roles) });
+    const authStore = await AuthStore.create({
+      db,
+      identityMapper
+    });
 
-    if (bootstrap ?.users && await authStore.count() === 0) {
+    if (bootstrap?.users && await authStore.count() === 0) {
       console.log('bootstrapping users');
       for (const user of bootstrap.users()) {
-        await authStore.addLogin(user);
+        await authStore.addUser(user);
       }
     }
 
@@ -120,8 +122,7 @@ export default class Services {
 
     const emailer = new Emailer({
       sender: (config('aws').Test || []).includes('email') ?
-        stubSES :
-        new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }),
+        stubSES : new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }),
       templateLibrary: emailTemplates
     });
     container.register('Emailer', () => emailer);

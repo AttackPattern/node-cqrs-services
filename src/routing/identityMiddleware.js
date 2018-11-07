@@ -7,7 +7,7 @@ export default class IdentityMiddleware {
 
   inject = async (ctx, next) => {
     try {
-      let { identity, token } = await this.getIdentity(ctx);
+      const { identity, token } = await this.getIdentity(ctx);
       ctx.$identity = identity;
       ctx.set('authorization', token);
       await next();
