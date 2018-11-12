@@ -19,7 +19,7 @@ import { Identity, Repository, RealWorldClock, RabbitScheduler } from '@facetdev
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
-  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, decorateUser = i => i, identityMapper = token => new Identity(token) }) => {
+  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, emailSender, decorateUser = i => i, identityMapper = token => new Identity(token) }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
 
@@ -122,8 +122,8 @@ export default class Services {
     };
 
     const emailer = new Emailer({
-      sender: (config('aws').Test || []).includes('email') ?
-        stubSES : new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source }),
+      sender: emailSender || ((config('aws').Test || []).includes('email') ?
+        stubSES : new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source })),
       templateLibrary: emailTemplates
     });
     container.register('Emailer', () => emailer);
