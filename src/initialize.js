@@ -4,6 +4,7 @@ import ampq from 'amqplib';
 
 import AuthenticationRouter from './routing/authenticationRouter';
 import CommandRouter from './routing/commandRouter';
+import InjectEventRouter from './routing/injectEventRouter';
 
 import IdentityMiddleware from './routing/identityMiddleware';
 import CommandExecutor from './commandHandling/commandExecutor';
@@ -168,10 +169,16 @@ export default class Services {
       passwordHandler
     });
 
+    const injectEventRouter = new InjectEventRouter({
+      repositories,
+      eventStore
+    })
+
     return {
       routers: {
         command: commandRouter,
-        auth: authRouter
+        auth: authRouter,
+        injectEvent: injectEventRouter
       },
       middleware: {
         identity: new IdentityMiddleware(authTokenMapper).inject
