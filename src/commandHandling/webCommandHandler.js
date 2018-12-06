@@ -21,7 +21,7 @@ export default class WebCommandHandler {
 
     try {
       ctx.body = await this.domainCommandDeliverer.deliver({
-        aggregate: ctx.params.aggregate,
+        service: ctx.params.service,
         target: aggregateId,
         commandType: ctx.params.commandType,
         command

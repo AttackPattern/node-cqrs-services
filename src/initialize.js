@@ -172,7 +172,7 @@ export default class Services {
     const injectEventRouter = new InjectEventRouter({
       repositories,
       eventStore
-    })
+    });
 
     return {
       routers: {
