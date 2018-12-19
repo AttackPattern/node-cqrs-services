@@ -30,7 +30,6 @@ export default class AuthStore {
         console.log('updating user', username);
         await user.save({
           userId,
-          password: hashedPassword,
           claims: JSON.stringify({ ...user.get('claims'), ...claims, ...updateClaims(user.get('claims') || {}) } || {}),
           version: uuidV4()
         }, { patch: true });
