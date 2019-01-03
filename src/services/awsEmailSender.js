@@ -1,14 +1,13 @@
-import promisify from 'es6-promisify';
-import aws from 'aws-sdk';
+import { promisify } from 'es6-promisify';
 
 export default class AwsEmailSender {
   constructor({ awsSes, from }) {
-    this.awsSes = new aws.SES();
+    this.awsSes = awsSes;
     this.from = from;
   }
 
   sendEmail({ recipient, subject, body }) {
-    return promisify(this.awsSes.sendEmail, this.awsSes)({
+    return promisify(this.awsSes.sendEmail.bind(this.awsSes))({
       Destination: { ToAddresses: [recipient] },
       Source: this.from,
       ReplyToAddresses: [this.from],

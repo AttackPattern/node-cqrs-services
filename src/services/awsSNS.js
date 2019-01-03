@@ -1,5 +1,5 @@
 import aws from 'aws-sdk';
-import promisify from 'es6-promisify';
+import { promisify } from 'es6-promisify';
 
 export default class AwsSNS {
 
@@ -15,7 +15,7 @@ export default class AwsSNS {
       console.log('token for os', deviceToken.os);
       const appArn = deviceToken.os === 'ios' ?
         this.applicationArns.ios : this.applicationArns.android;
-      const response = await promisify(this.SNS.createPlatformEndpoint, this.SNS)({
+      const response = await promisify(this.SNS.createPlatformEndpoint.bind(this.SNS))({
         PlatformApplicationArn: appArn,
         Token: deviceToken.token
       });
@@ -58,7 +58,7 @@ export default class AwsSNS {
 
   sendNotification = async (message) => {
     try {
-      await promisify(this.SNS.publish, this.SNS)(message);
+      await promisify(this.SNS.publish.bind(this.SNS))(message);
     }
     catch (e) {
       console.log('SES setup error', e.message);
