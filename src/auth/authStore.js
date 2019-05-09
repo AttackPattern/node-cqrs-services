@@ -57,6 +57,15 @@ export default class AuthStore {
     }
   }
 
+  removeUser = async ({ userId }) => {
+    let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
+    await user.save({
+      userId,
+      status: 'suspended',
+      claims: JSON.stringify({ ...user.get('claims'), organizations: {} } || {})
+    }, { patch: true });
+  }
+
   removeUserFromOrg = async ({ organizationId, userId }) => {
     let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
     const organizations = {
