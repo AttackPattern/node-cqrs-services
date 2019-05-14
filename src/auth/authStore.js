@@ -27,13 +27,15 @@ export default class AuthStore {
         await new this.Login().save({ userId, username, password: hashedPassword, claims: JSON.stringify({ ...claims, ...updateClaims({}) }), version: uuidV4(), status });
       }
       else {
-        console.log('updating user', username);
+        //NOTE: We set status to active when re-inviting
         await user.save({
           userId,
           claims: JSON.stringify({ ...user.get('claims'), ...claims, ...updateClaims(user.get('claims') || {}) } || {}),
+          status: 'active',
           version: uuidV4()
         }, { patch: true });
       }
+      return { isNewUser: !user };
     }
     catch (e) {
       console.log('Failed to add login', e);
@@ -58,7 +60,12 @@ export default class AuthStore {
   }
 
   removeUser = async ({ userId }) => {
-    let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
+    let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims', 'status'] });
+    // NOTE: If removing a user that hasn't yet accepted their invite, just remove from db all together as they will never be able to login because initial random password is lost.
+    console.log('stattss', user)
+    if (user.attributes.status === 'onboard') {
+      return this.Login.where({ userId: user.attributes.userId }).destroy();
+    }
     await user.save({
       userId,
       status: 'suspended',
@@ -67,7 +74,11 @@ export default class AuthStore {
   }
 
   removeUserFromOrg = async ({ organizationId, userId }) => {
-    let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
+    let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims', 'status'] });
+    // NOTE: If removing a user that hasn't yet accepted their invite, just remove from db all together as they will never be able to login because initial random password is lost.
+    if (user.attributes.status === 'onboard') {
+      return this.Login.where({ userId: user.attributes.userId }).destroy();
+    }
     const organizations = {
       ...user.get('claims').organizations
     };
