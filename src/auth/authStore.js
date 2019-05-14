@@ -62,7 +62,6 @@ export default class AuthStore {
   removeUser = async ({ userId }) => {
     let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims', 'status'] });
     // NOTE: If removing a user that hasn't yet accepted their invite, just remove from db all together as they will never be able to login because initial random password is lost.
-    console.log('stattss', user)
     if (user.attributes.status === 'onboard') {
       return this.Login.where({ userId: user.attributes.userId }).destroy();
     }
