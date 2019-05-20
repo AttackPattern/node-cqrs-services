@@ -18,16 +18,23 @@ export default class AuthStore {
     return store;
   }
 
-  addUser = async ({ userId, username, password, claims, updateClaims = claims => claims, status = 'active' }) => {
+  addUser = async ({ userId, username, password, claims, updateClaims = claims => claims }) => {
     try {
       let hashedPassword = await bcrypt.hash(password, saltRounds);
-      let user = (await this.Login.where({ username }).fetch({ columns: ['id', 'userId', 'username', 'claims'] }));
+      // Determine if user already exists for update or creation.
+      let user = await this.Login.where({ username }).fetch({ columns: ['id', 'userId', 'username', 'claims', 'status'] });
+      let status;
       if (!user) {
-        console.log('adding new user', username);
+        // No records, create new user
+        status = 'onboard';
         await new this.Login().save({ userId, username, password: hashedPassword, claims: JSON.stringify({ ...claims, ...updateClaims({}) }), version: uuidV4(), status });
       }
       else {
-        //NOTE: We set status to active when re-inviting
+        // User exists, so set their status back to active from a suspension.
+        // Or, we are inviting user to a second organization.
+
+        // Get users current status to determine if coming off a suspension or being re-invited to new organization.
+        status = user.attributes.status;
         await user.save({
           userId,
           claims: JSON.stringify({ ...user.get('claims'), ...claims, ...updateClaims(user.get('claims') || {}) } || {}),
@@ -35,7 +42,7 @@ export default class AuthStore {
           version: uuidV4()
         }, { patch: true });
       }
-      return { isNewUser: !user };
+      return { status };
     }
     catch (e) {
       console.log('Failed to add login', e);
