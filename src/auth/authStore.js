@@ -16,7 +16,7 @@ export default class AuthStore {
     });
 
     return store;
-  }
+  };
 
   addUser = async ({ userId, username, password, claims, updateClaims = claims => claims, status = 'active' }) => {
     try {
@@ -39,7 +39,7 @@ export default class AuthStore {
       console.log('Failed to add login', e);
       throw e;
     }
-  }
+  };
 
   getUser = async ({ username, version }) => {
     try {
@@ -55,7 +55,7 @@ export default class AuthStore {
       console.log('Could not find user', e);
       return null;
     }
-  }
+  };
 
   removeUser = async ({ userId }) => {
     let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
@@ -64,7 +64,7 @@ export default class AuthStore {
       status: 'suspended',
       claims: JSON.stringify({ ...user.get('claims'), organizations: {} } || {})
     }, { patch: true });
-  }
+  };
 
   removeUserFromOrg = async ({ organizationId, userId }) => {
     let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
@@ -76,7 +76,7 @@ export default class AuthStore {
       userId,
       claims: JSON.stringify({ ...user.get('claims'), organizations } || {})
     }, { patch: true });
-  }
+  };
 
   checkLogin = async ({ username, password }) => {
     let userRecords = await this.Login.where({ username }).where('status', '<>', 'suspended').query();
@@ -84,13 +84,44 @@ export default class AuthStore {
     if (user && await bcrypt.compare(password, user.password)) {
       return { ...this.getIdentity(user), status: user.status };
     }
-  }
+  };
 
   changePassword = async ({ userId, password, status }) => {
     let hashedPassword = await bcrypt.hash(password, saltRounds);
     let user = await this.Login.where({ userId }).fetch();
-    await user.save({ password: hashedPassword, version: uuidV4(), status: status || 'active' }, { patch: true });
-  }
+    await user.save(
+      { password: hashedPassword, version: uuidV4(), status: status || 'active' },
+      { patch: true }
+    );
+  };
+
+  updateRoles = async ({ userId, organizationId, roles = [] }) => {
+    let error = null;
+    if (!organizationId) {
+      error = 'No organizationId provided to updateRoles.';
+    }
+    if (!roles.length) {
+      error = 'No roles provided to updateRoles. A user must have at least one role.';
+    }
+    let user = await this.Login.where({ userId }).fetch();
+    if (!user) {
+      error = 'User not found for updateRoles.';
+    }
+    const organizations = { ...user.get('claims').organizations };
+    if (!organizations[organizationId]) {
+      error = 'Organization not found for updateRoles.';
+    }
+    if (error) {
+      console.log(error);
+      throw error;
+    }
+    organizations[organizationId].roles = roles;
+    const claims = user.get('claims') || {};
+    await user.save(
+      { claims: JSON.stringify({ ...claims, organizations }) },
+      { patch: true }
+    );
+  };
 
   enableUser = async ({ userId }) => this._setUserStatus({ userId, status: 'active' });
   suspendUser = async ({ userId }) => this._setUserStatus({ userId, status: 'suspended' });
@@ -104,7 +135,7 @@ export default class AuthStore {
       console.log('Error setting user status', e);
       throw e;
     }
-  }
+  };
 
   count = () => this.Login.count();
 }
