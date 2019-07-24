@@ -57,6 +57,21 @@ export default class AuthStore {
     }
   };
 
+  updateEmail = async ({ userId, newEmail }) => {
+    try {
+    let user = await this.Login.where({ userId }).fetch();
+    await user.save({
+      userId,
+      username: newEmail
+    }, { patch: true });
+    return user;
+    }
+    catch (ex) {
+      console.log('user not found for email update');
+      return null;
+    }
+  }
+
   removeUser = async ({ userId }) => {
     let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
     await user.save({
