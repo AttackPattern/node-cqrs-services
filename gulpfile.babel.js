@@ -1,4 +1,8 @@
-import '@babel/polyfill';
+require('@babel/register').default({
+    extensions: ['.js', '.ts']
+  });
+  require('core-js/stable');
+  require('regenerator-runtime/runtime');
 
 import BUILD_CONFIG from './buildConfig';
 
