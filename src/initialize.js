@@ -12,7 +12,7 @@ import WebCommandHandler from './commandHandling/webCommandHandler';
 import PasswordCommandHandler from './commandHandling/passwordCommandHandler';
 import DomainCommandHandler from './commandHandling/domainCommandDeliverer';
 import { EventMapper, EventStore, EventStoreInitializer } from './eventing';
-import { AwsSNS, Emailer, SecretCodes, AwsEmailSender } from './services';
+import { Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
@@ -102,14 +102,6 @@ export default class Services {
       accessKeyId: config('aws').AccessKey && config.decrypt(config('aws').AccessKey),
       secretAccessKey: config('aws').SecretAccessKey && config.decrypt(config('aws').SecretAccessKey)
     });
-
-    const notifications = new AwsSNS({
-      applicationArns: {
-        ios: config('aws').IOS_APP_ARN,
-        android: config('aws').ANDROID_APP_ARN
-      }
-    });
-    container.register('PushNotifications', () => notifications);
 
     const stubSES = {
       sendEmail: async ({ recipient, subject, body }) => {
