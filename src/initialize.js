@@ -176,6 +176,8 @@ export default class Services {
         identity: new IdentityMiddleware(authTokenMapper).inject
       },
       authStore,
+      authTokenMapper,
+      emailer,
       repositories
     };
   }
