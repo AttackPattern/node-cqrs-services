@@ -95,6 +95,8 @@ export default class Services {
       expiration: config('authentication').expiration,
       identityMapper
     });
+    container.register('AuthTokenMapper', () => authTokenMapper);
+
     container.register('systemIdentity', () => authTokenMapper.sign(Identity.system));
 
     aws.config.update({
@@ -175,6 +177,7 @@ export default class Services {
       middleware: {
         identity: new IdentityMiddleware(authTokenMapper).inject
       },
+      aws,
       authStore,
       authTokenMapper,
       emailer,

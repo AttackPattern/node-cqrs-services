@@ -23,17 +23,14 @@ export default class AuthStore {
       let hashedPassword = await bcrypt.hash(password, saltRounds);
       let user = (await this.Login.where({ username }).fetch({ columns: ['id', 'userId', 'username', 'claims'] }));
       if (!user) {
-        console.log('adding new user', username);
         await new this.Login().save({ userId, username, password: hashedPassword, claims: JSON.stringify({ ...claims, ...updateClaims({}) }), version: uuidV4(), status });
+        return await this.getUser({ username });
       }
-      else {
-        console.log('updating user', username);
-        await user.save({
-          userId,
-          claims: JSON.stringify({ ...user.get('claims'), ...claims, ...updateClaims(user.get('claims') || {}) } || {}),
-          version: uuidV4()
-        }, { patch: true });
-      }
+      await user.save({
+        userId,
+        claims: JSON.stringify({ ...user.get('claims'), ...claims, ...updateClaims(user.get('claims') || {}) } || {}),
+        version: uuidV4()
+      }, { patch: true });
     }
     catch (e) {
       console.log('Failed to add login', e);
