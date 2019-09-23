@@ -27,6 +27,12 @@ export default class PasswordCommandHandler {
       ctx.status = 404;
       return;
     }
+    if (user.status === 'logisticsAdmin') {
+      console.log('Cannot reset a logisticsAdmin password', username);
+      ctx.body = { error: 'Logistics admins must use magic link authentication' };
+      ctx.status = 404;
+      return;
+    }
 
     try {
       ctx.body = await this.domainCommandDeliverer.deliver({
