@@ -35,11 +35,12 @@ export default class WebCommandHandler {
   }
 
   handleError(ctx, error) {
-    if (error instanceof ValidationError) {
+    console.log('handle error', error);
+    if (error instanceof ValidationError || error?.name === 'ValidationError') {
       console.log('Validation failure');
       ctx.status = 400;
     }
-    else if (error instanceof AuthorizationError) {
+    else if (error instanceof AuthorizationError || error?.name === 'AuthorizationError') {
       console.log('Authorization failure');
       ctx.status = 403;
     }
