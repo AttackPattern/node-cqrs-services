@@ -35,7 +35,6 @@ export default class WebCommandHandler {
   }
 
   handleError(ctx, error) {
-    console.log('handle error', error);
     if (error instanceof ValidationError || error?.name === 'ValidationError') {
       console.log('Validation failure');
       ctx.status = 400;
