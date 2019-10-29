@@ -11,18 +11,36 @@ export default class AuthenticationRouter extends Router {
     this
       .post('/resetPassword', passwordHandler.handleResetCommand)
       .post('/changePassword', passwordHandler.handleChangeCommand)
+      .post('/refresh', async (ctx, next) => {
+        try {
+          let { refresh } = ctx.headers;
+          const { identity } = await authTokenMapper.verify(refresh);
+          const user = await authStore.getUser(identity);
+          const token = await authTokenMapper.sign({ ...user });
+          ctx.body = {
+            ...user,
+            token
+          };
+          ctx.status = 200;
+        }
+        catch (ex) {
+          console.log('sign error', ex);
+          ctx.status = 401;
+          ctx.body = { error: 'Bad refresh token' };
+          return;
+        }
+      })
       .post('/login', async (ctx, next) =>
-        passport.authenticate('local', async (err, identity, info) => {
+        passport.authenticate('local', async (err, identity) => {
           if (err) {
             console.log('Authentication failure', err);
             ctx.status = 401;
             ctx.body = { error: 'Invalid username or password' };
             return;
           }
-
           ctx.body = {
             ...identity,
-            token: authTokenMapper.sign(identity),
+            ...authTokenMapper.authenticate(identity),
             ...await decorateUser(identity)
           };
           ctx.status = 200;

@@ -12,24 +12,28 @@ export default class AuthTokenMapper {
     this.identityMapper = identityMapper;
   }
 
-  sign(identity) {
-    return jwt.sign({
-      identity: jwt.sign(identity, this.secret, {
-        expiresIn: this.expiration.identity
-      }),
-      refresh: {
-        username: identity.username,
-        version: identity.version
-      }
-    }, this.secret, {
+  signRefresh(identity) {
+    return jwt.sign(identity, this.secret, {
       expiresIn: this.expiration.refresh
     });
   }
 
+  sign(identity) {
+    return jwt.sign(identity, this.secret, {
+        expiresIn: this.expiration.identity
+    });
+  }
+
+  authenticate(identity) {
+    return {
+      token: this.sign(identity),
+      refresh: this.signRefresh(identity)
+    };
+  }
+
   verify = async token => {
-    let { identity: identityToken, refresh } = await jwt.verify(token, this.secret);
     try {
-      let identity = this.identityMapper(await jwt.verify(identityToken, this.secret));
+      let identity = this.identityMapper(await jwt.verify(token, this.secret));
       return {
         identity,
         token
@@ -37,14 +41,7 @@ export default class AuthTokenMapper {
     }
     catch (err) {
       if (err.name === 'TokenExpiredError') {
-        let identity = await this.authStore.getUser(refresh);
-        if (!identity) {
-          throw new TokenExpiredError();
-        }
-        return {
-          identity,
-          token: this.sign(identity)
-        };
+        throw new TokenExpiredError();
       }
     }
   }

@@ -20,7 +20,7 @@ export default class IdentityMiddleware {
   }
 
   getIdentity = ctx => {
-    let { [0]: type, [1]: token } = ctx.headers.authorization && ctx.headers.authorization.split(' ') || [];
+    let { [0]: type, [1]: token } = !!ctx.headers.authorization && ctx.headers.authorization.split(' ') || [];
 
     token = token || type;
     if (!token) {
