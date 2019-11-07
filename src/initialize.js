@@ -1,10 +1,10 @@
 import aws from 'aws-sdk';
 import passport from 'koa-passport';
-import ampq from 'amqplib';
-
+import fetch from 'node-fetch';
 import AuthenticationRouter from './routing/authenticationRouter';
 import CommandRouter from './routing/commandRouter';
 import InjectEventRouter from './routing/injectEventRouter';
+import TaskSchedulerRouter from './routing/taskSchedulerRouter';
 
 import IdentityMiddleware from './routing/identityMiddleware';
 import CommandExecutor from './commandHandling/commandExecutor';
@@ -16,11 +16,11 @@ import { Emailer, SecretCodes, AwsEmailSender } from './services';
 
 import AuthTokenMapper from './auth/authTokenMapper';
 import AuthStore from './auth/authStore';
-import { Identity, Repository, RealWorldClock, RabbitScheduler } from '@facetdev/node-cqrs-lib';
+import { Identity, Repository, RealWorldClock, TaskScheduler } from '@facetdev/node-cqrs-lib';
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
-  static initialize = async ({ container, config, db, bootstrap, domain, emailTemplates, emailSender, decorateUser = i => i, identityMapper = token => new Identity(token) }) => {
+  static initialize = async ({ container, config, db, fcmKey, bootstrap, domain, emailTemplates, emailSender, decorateUser = i => i, identityMapper = token => new Identity(token) }) => {
 
     await EventStoreInitializer.assureEventsTable(db);
 
@@ -130,24 +130,39 @@ export default class Services {
     const domainCommandDeliverer = new DomainCommandHandler(executors);
     const clock = new RealWorldClock();
 
-    function connectRabbit(store) {
-      return new Promise(resolve => {
-        function retry() {
-          ampq.connect(store)
-            .then(c => {
-              console.log('Connected to rabbit');
-              resolve(c);
-            })
-            .catch(() => {
-              setTimeout(retry, 500);
-            });
-        }
-        retry();
-      });
+    /**
+     * For Google Cloud tasks we need a callback URL for the scheduled task to be delivered to
+     * in Dev this presents a unique challenge so we use ngrok to create a tunnel proxy, the problem
+     * is that ngrok generates a new url on startup every time.  So we need to use said tunnel in dev
+     **/
+    let rootUrl = config('google').tasks?.deliveryRoot;
+    if (process.env.ConfigurationPrecedence === 'dev') {
+      try {
+        const response = await fetch('http://ngrok:4040/api/tunnels', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const result = await response.json();
+        console.log('setting Gcloud Task callback root to:', result.tunnels?.[0]?.public_url);
+        rootUrl = result.tunnels?.[0]?.public_url;
+      }
+      catch (ex) {
+        console.log('lookup of ngrok in dev environment failed');
+      }
     }
 
-    const scheduledCommandChannel = await (await connectRabbit(config('scheduledCommands').store)).createChannel();
-    const commandScheduler = new RabbitScheduler({ channel: scheduledCommandChannel, clock, deliverer: domainCommandDeliverer });
+    const commandScheduler = new TaskScheduler({
+      ...config('google').tasks,
+      rootUrl,
+      deliveryPath: '/services/task/deliver',
+      credentials: {
+        private_key: fcmKey,
+        client_email: config('google').serviceAccounts.firebase.client_email,
+        email: config('google').serviceAccounts.firebase.client_email
+      }
+    });
     const domainServices = new DomainServices({ commandScheduler, repositories, clock });
 
     container.register('DomainServices', () => domainServices);
@@ -168,11 +183,14 @@ export default class Services {
       eventStore
     });
 
-    return {
+  const taskSchedulerRouter = new TaskSchedulerRouter({ deliverer: domainCommandDeliverer });
+
+  return {
       routers: {
         command: commandRouter,
         auth: authRouter,
-        injectEvent: injectEventRouter
+        injectEvent: injectEventRouter,
+        task: taskSchedulerRouter
       },
       middleware: {
         identity: new IdentityMiddleware(authTokenMapper).inject

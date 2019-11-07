@@ -16,13 +16,12 @@ export default class DomainServices {
     return id;
   }
 
-  scheduleCommand = async ({ service, aggregate, target, command, due, seconds }) => {
+  scheduleCommand = async ({ service, aggregate, target, command, seconds }) => {
     await this.commandScheduler.schedule({
       service: service || aggregate,
-      target: target,
-      command: command,
-      due: due || moment(this.clock.now()).add(seconds || 0, 'seconds').toDate(),
-      clock: this.clock
+      target,
+      command,
+      seconds
     });
   }
 
