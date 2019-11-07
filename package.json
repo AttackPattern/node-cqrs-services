@@ -1,6 +1,6 @@
 {
   "name": "@facetdev/node-cqrs-services",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Library of base classes for Node CQRS services implementation",
   "main": "index.js",
   "scripts": {

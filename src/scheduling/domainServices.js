@@ -1,5 +1,6 @@
 import moment from 'moment';
 import uuidV4 from 'uuid/v4';
+import { Identity } from '@facetdev/node-cqrs-lib';
 
 export default class DomainServices {
   constructor({ commandExecuter, commandScheduler, repositories, clock }) {
@@ -27,6 +28,7 @@ export default class DomainServices {
   }
 
   executeCommand = async ({ service, aggregate, target, command }) => {
+    command.$identity = Identity.system;
     await this.commandExecuter.deliver({
       service: service || aggregate,
       target: target,
