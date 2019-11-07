@@ -156,14 +156,14 @@ export default class Services {
     const commandScheduler = new TaskScheduler({
       ...config('google').tasks,
       rootUrl,
-      deliveryPath: '/services/task/deliver',
+      deliveryPath: 'services/task/deliver',
       credentials: {
         private_key: fcmKey,
         client_email: config('google').serviceAccounts.firebase.client_email,
         email: config('google').serviceAccounts.firebase.client_email
       }
     });
-    const domainServices = new DomainServices({ commandScheduler, repositories, clock });
+    const domainServices = new DomainServices({ commandScheduler, commandExecuter: domainCommandDeliverer, repositories, clock });
 
     container.register('DomainServices', () => domainServices);
 

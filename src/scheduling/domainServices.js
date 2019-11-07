@@ -2,8 +2,9 @@ import moment from 'moment';
 import uuidV4 from 'uuid/v4';
 
 export default class DomainServices {
-  constructor({ commandScheduler, repositories, clock }) {
+  constructor({ commandExecuter, commandScheduler, repositories, clock }) {
     this.commandScheduler = commandScheduler;
+    this.commandExecuter = commandExecuter;
     this.repositories = repositories;
     this.clock = clock;
   }
@@ -26,7 +27,7 @@ export default class DomainServices {
   }
 
   executeCommand = async ({ service, aggregate, target, command }) => {
-    await this.commandScheduler.execute({
+    await this.commandExecuter.deliver({
       service: service || aggregate,
       target: target,
       command: command
