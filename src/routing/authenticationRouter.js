@@ -24,7 +24,6 @@ export default class AuthenticationRouter extends Router {
           ctx.status = 200;
         }
         catch (ex) {
-          console.log('sign error', ex);
           ctx.status = 401;
           ctx.body = { error: 'Bad refresh token' };
           return;

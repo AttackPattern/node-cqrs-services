@@ -13,7 +13,7 @@ export default class IdentityMiddleware {
       await next();
     }
     catch (err) {
-      console.log('Failed validating authentication token', err);
+      console.log('Failed validating authentication token', err.message);
       ctx.status = 401;
       ctx.body = { error: err.name || 'Failed validating authentication token' };
     }
