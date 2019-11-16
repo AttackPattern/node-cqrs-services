@@ -73,7 +73,6 @@ export default class AuthStore {
     let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
     await user.save({
       userId,
-      status: 'suspended',
       claims: JSON.stringify({ ...user.get('claims'), organizations: {} } || {})
     }, { patch: true });
   };
