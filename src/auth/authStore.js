@@ -11,8 +11,12 @@ export default class AuthStore {
 
     let store = new AuthStore();
     store.getIdentity = user => identityMapper(user);
-    store.Login = require('bookshelf')(db.knex('auth')).Model.extend({
+    const auth = require('bookshelf')(db.knex('auth'));
+    store.Login = auth.Model.extend({
       tableName: 'logins'
+    });
+    store.Feature = auth.Model.extend({
+      tableName: 'features'
     });
 
     return store;
@@ -35,6 +39,29 @@ export default class AuthStore {
     catch (e) {
       console.log('Failed to add login', e);
       throw e;
+    }
+  };
+
+  toggleFeatures = async ({ organizationId, features }) => {
+    let organization = await this.Feature.where({ organizationId }).fetch();
+    if (organization) {
+      organization.save({
+        claims: JSON.stringify({ ...features })
+      });
+    }
+    else {
+      await new this.Feature().save({ organizationId, claims: JSON.stringify({ ...features }) });
+    }
+  };
+
+  getFeatures = async ({ organizationId }) => {
+    try {
+      const featureSet = await this.Feature.where({ organizationId }).fetch();
+      return featureSet || {};
+    }
+    catch (e) {
+      console.log('Could not find organization with enabled features', e.message);
+      return null;
     }
   };
 

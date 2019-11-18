@@ -16,5 +16,13 @@ export default class AuthStoreInitializer {
         table.unique('username');
       });
     }
+    if (!await knex.schema.hasTable('features')) {
+      await knex.schema.createTable('features', table => {
+        table.bigIncrements('id').primary().notNullable();
+        table.string('organizationId', 36).notNullable();
+        table.specificType('claims', 'json');
+        table.unique('organizationId');
+      });
+    }
   }
 }
