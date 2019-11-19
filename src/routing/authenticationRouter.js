@@ -39,7 +39,7 @@ export default class AuthenticationRouter extends Router {
           }
           ctx.body = {
             ...identity,
-            ...authTokenMapper.authenticate(identity),
+            ...(await authTokenMapper.authenticate(identity)),
             ...await decorateUser(identity)
           };
           ctx.status = 200;

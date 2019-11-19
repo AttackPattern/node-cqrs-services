@@ -18,16 +18,30 @@ export default class AuthTokenMapper {
     });
   }
 
-  sign(identity) {
+  async sign(identity) {
+    // if the user belongs to an organization lets make sure to merge in all features of the org
+    let features = [];
+    if (Object.keys(identity?.claims?.organizations)?.length) {
+      features = await this.authStore.getFeatures(Object.keys(identity?.claims?.organizations));
+      features.forEach(f => {
+        identity.claims.organizations[f.organizationId].features = Object.keys(f.claims);
+      });
+
+    }
     return jwt.sign(identity, this.secret, {
         expiresIn: this.expiration.identity
     });
   }
 
-  authenticate(identity) {
+  async authenticate(identity) {
     return {
-      token: this.sign(identity),
-      refresh: this.signRefresh(identity)
+      token: await this.sign(identity),
+      // refresh token is only needed for identity extraction on token refresh, minimize token size
+      refresh: this.signRefresh({
+        username: identity.username,
+        userId: identity.userId,
+        claims: { organizations: {} }
+      })
     };
   }
 

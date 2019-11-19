@@ -54,10 +54,10 @@ export default class AuthStore {
     }
   };
 
-  getFeatures = async ({ organizationId }) => {
+  getFeatures = async organizationIds => {
     try {
-      const featureSet = await this.Feature.where({ organizationId }).fetch();
-      return featureSet || {};
+      const featureSets = await this.Feature.where({ organizationId: organizationIds }).query();
+      return featureSets || {};
     }
     catch (e) {
       console.log('Could not find organization with enabled features', e.message);
@@ -97,11 +97,11 @@ export default class AuthStore {
   }
 
   removeUser = async ({ userId }) => {
-    let user = await this.Login.where({ userId }).fetch({ columns: ['id', 'userId', 'claims'] });
-    await user.save({
-      userId,
-      claims: JSON.stringify({ ...user.get('claims'), organizations: {} } || {})
-    }, { patch: true });
+    // if we remove a user, destroy (delete) their login credentials from the db.
+    // This will orphan the user in projections which leaves them in place for historical lookup purposes
+    // this also allows a user of the same email/name to now exist with updated data.
+    const user = await new this.Login({ userId }).fetch();
+    await user.destroy();
   };
 
   removeUserFromOrg = async ({ organizationId, userId }) => {
