@@ -157,6 +157,7 @@ export default class Services {
       ...config('google').tasks,
       rootUrl,
       deliveryPath: 'services/task/deliver',
+      secret: config.decrypt(config('authentication').secret),
       credentials: {
         private_key: fcmKey,
         client_email: config('google').serviceAccounts.firebase.client_email,
@@ -183,7 +184,10 @@ export default class Services {
       eventStore
     });
 
-  const taskSchedulerRouter = new TaskSchedulerRouter({ deliverer: domainCommandDeliverer });
+  const taskSchedulerRouter = new TaskSchedulerRouter({
+    deliverer: domainCommandDeliverer,
+    secret: config.decrypt(config('authentication').secret)
+  });
 
   return {
       routers: {
