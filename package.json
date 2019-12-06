@@ -1,6 +1,6 @@
 {
   "name": "@facetdev/node-cqrs-services",
-  "version": "0.7.1",
+  "version": "0.7.4",
   "description": "Library of base classes for Node CQRS services implementation",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/AttackPattern/node-cqrs-services#readme",
   "dependencies": {
-    "@facetdev/node-cqrs-lib": "0.10.2",
+    "@facetdev/node-cqrs-lib": "0.10.7",
     "async": "3.1.0",
     "aws-sdk": "2.554.0",
     "es-promisify": "1.1.2",
