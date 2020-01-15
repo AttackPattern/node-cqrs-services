@@ -18,7 +18,7 @@ export default class AuthTokenMapper {
     });
   }
 
-  async sign(identity) {
+  async sign(identity, expiration) {
     // if the user belongs to an organization lets make sure to merge in all features of the org
     let features = [];
     if (Object.keys(identity?.claims?.organizations)?.length) {
@@ -29,7 +29,7 @@ export default class AuthTokenMapper {
 
     }
     return jwt.sign(identity, this.secret, {
-        expiresIn: this.expiration.identity
+        expiresIn: expiration || this.expiration.identity
     });
   }
 
