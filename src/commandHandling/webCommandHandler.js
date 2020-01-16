@@ -24,35 +24,31 @@ export default class WebCommandHandler {
         service: ctx.params.service,
         target: aggregateId,
         commandType: ctx.params.commandType,
-        command
+        command,
       });
       ctx.status = 200;
       return;
-    }
-    catch (e) {
+    } catch (e) {
       this.handleError(ctx, e);
     }
-  }
+  };
 
   handleError(ctx, error) {
     if (error instanceof ValidationError || error?.name === 'ValidationError') {
       console.log('Validation failure');
       ctx.status = 400;
-    }
-    else if (error instanceof AuthorizationError || error?.name === 'AuthorizationError') {
+    } else if (error instanceof AuthorizationError || error?.name === 'AuthorizationError') {
       console.log('Authorization failure');
       ctx.status = 403;
-    }
-    else if (error instanceof CommandHandlerError) {
+    } else if (error instanceof CommandHandlerError) {
       console.log('Error handling command');
       ctx.status = 500;
-    }
-    else {
+    } else {
       console.log('Unexpected exception');
       ctx.status = 500;
     }
 
-    ctx.body = { error: error ?.message };
+    ctx.body = { error: error?.message };
     console.log(error);
   }
 }

@@ -11,7 +11,7 @@ export default class CommandExecutor {
     const handler = this.handlers[commandType] && this.handlers[commandType]();
     if (!handler) {
       throw new CommandHandlerError({
-        message: `Unknown command ${commandType}`
+        message: `Unknown command ${commandType}`,
       });
     }
 
@@ -22,27 +22,26 @@ export default class CommandExecutor {
 
       await this.repository.record(events);
       return { id: aggregate.id, ...body };
-    }
-    catch (error) {
+    } catch (error) {
       error.handler = handler;
       throw error;
     }
-  }
-
+  };
 
   getAggregate = async (handler, aggregateId) => {
     if (!aggregateId) {
       return await this.repository.create();
     }
-    const aggregate = await this.repository.get(aggregateId) ||
-      (handler.isCreateHandler && await this.repository.create(aggregateId));
+    const aggregate =
+      (await this.repository.get(aggregateId)) ||
+      (handler.isCreateHandler && (await this.repository.create(aggregateId)));
     if (!aggregate) {
       throw new CommandHandlerError({
         message: `${this.name} ${aggregateId} not found`,
         handler,
-        aggregate
+        aggregate,
       });
     }
     return aggregate;
-  }
+  };
 }

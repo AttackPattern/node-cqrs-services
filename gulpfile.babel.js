@@ -1,8 +1,8 @@
 require('@babel/register').default({
-    extensions: ['.js', '.ts']
-  });
-  require('core-js/stable');
-  require('regenerator-runtime/runtime');
+  extensions: ['.js', '.ts'],
+});
+require('core-js/stable');
+require('regenerator-runtime/runtime');
 
 import BUILD_CONFIG from './buildConfig';
 
@@ -36,62 +36,70 @@ const envCheck = process.env.NODE_ENV === 'production';
  * Lint method(s)
  ******************************************************************************/
 function lintJS(src, cacheKey) {
-    return gulp.src(src)
-        .pipe($.cached(cacheKey))
-        .pipe($.eslint())
-        .pipe($.eslint.format())
-        .pipe($.if(envCheck, $.eslint.failOnError()))
-        .pipe($.remember(cacheKey));
+  return gulp
+    .src(src)
+    .pipe($.cached(cacheKey))
+    .pipe($.eslint())
+    .pipe($.eslint.format())
+    .pipe($.if(envCheck, $.eslint.failOnError()))
+    .pipe($.remember(cacheKey));
 }
 
 /*******************************************************************************
  * Test method(s)
  ******************************************************************************/
 function instrumentScripts() {
-    return gulp.src(BUILD_CONFIG.SRC_SCRIPTS)
-        .pipe($.babel())
-        .pipe($.istanbul({
-            ...BUILD_CONFIG.ISTANBUL.INIT
-        }))
-        .pipe($.istanbul.hookRequire());
+  return gulp
+    .src(BUILD_CONFIG.SRC_SCRIPTS)
+    .pipe($.babel())
+    .pipe(
+      $.istanbul({
+        ...BUILD_CONFIG.ISTANBUL.INIT,
+      })
+    )
+    .pipe($.istanbul.hookRequire());
 }
 
 function testScripts() {
-    return gulp.src(BUILD_CONFIG.TST_UNIT)
-        .pipe($.babel())
-        .pipe($.mocha(BUILD_CONFIG.MOCHA))
-        // .pipe($.istanbul.writeReports(BUILD_CONFIG.ISTANBUL.WRITE))
-        .on('error', () => log('unit tests failed...'));
+  return (
+    gulp
+      .src(BUILD_CONFIG.TST_UNIT)
+      .pipe($.babel())
+      .pipe($.mocha(BUILD_CONFIG.MOCHA))
+      // .pipe($.istanbul.writeReports(BUILD_CONFIG.ISTANBUL.WRITE))
+      .on('error', () => log('unit tests failed...'))
+  );
 }
 
 /*******************************************************************************
  * Build method(s)
  ******************************************************************************/
 function buildScripts() {
-    return gulp.src(BUILD_CONFIG.SRC_SCRIPTS)
-        .pipe($.changed(BUILD_CONFIG.OUTPUT_SCRIPTS))
-        .pipe($.if(!envCheck, $.sourcemaps.init()))
-        .pipe($.babel())
-        .pipe($.uglify())
-        .pipe($.if(!envCheck, $.sourcemaps.write('maps')))
-        .pipe(gulp.dest(BUILD_CONFIG.OUTPUT_SCRIPTS));
+  return gulp
+    .src(BUILD_CONFIG.SRC_SCRIPTS)
+    .pipe($.changed(BUILD_CONFIG.OUTPUT_SCRIPTS))
+    .pipe($.if(!envCheck, $.sourcemaps.init()))
+    .pipe($.babel())
+    .pipe($.uglify())
+    .pipe($.if(!envCheck, $.sourcemaps.write('maps')))
+    .pipe(gulp.dest(BUILD_CONFIG.OUTPUT_SCRIPTS));
 }
 
 /*******************************************************************************
  * Runner(s)
  ******************************************************************************/
 function runCleanAll() {
-    return del(BUILD_CONFIG.OUTPUT_DEL);
+  return del(BUILD_CONFIG.OUTPUT_DEL);
 }
 
 function runCleanScripts() {
-    return del(BUILD_CONFIG.OUTPUT_SCRIPTS);
+  return del(BUILD_CONFIG.OUTPUT_SCRIPTS);
 }
 
 function runWatch() {
-    gulp.watch(BUILD_CONFIG.SRC_GULPFILE, gulp.series(`${LINT}${GULPFILE}`));
-    gulp.watch(BUILD_CONFIG.SRC_SCRIPTS, gulp.series([`${RUN}${SCRIPTS}`]));
-    gulp.watch(BUILD_CONFIG.TST_UNIT, gulp.series([`${TEST}${SCRIPTS}`]));
+  gulp.watch(BUILD_CONFIG.SRC_GULPFILE, gulp.series(`${LINT}${GULPFILE}`));
+  gulp.watch(BUILD_CONFIG.SRC_SCRIPTS, gulp.series([`${RUN}${SCRIPTS}`]));
+  gulp.watch(BUILD_CONFIG.TST_UNIT, gulp.series([`${TEST}${SCRIPTS}`]));
 }
 
 /*******************************************************************************
@@ -112,16 +120,16 @@ gulp.task(`${BUILD}${SCRIPTS}`, buildScripts);
 // main task runners
 gulp.task(`${RUN}${CLEAN}${ALL}`, runCleanAll);
 gulp.task(`${RUN}${CLEAN}${SCRIPTS}`, runCleanScripts);
-gulp.task(`${RUN}${SCRIPTS}`, gulp.series(
+gulp.task(
+  `${RUN}${SCRIPTS}`,
+  gulp.series(
     `${RUN}${CLEAN}${SCRIPTS}`,
     `${LINT}${SCRIPTS}`,
     `${INSTRUMENT}${SCRIPTS}`,
     `${TEST}${SCRIPTS}`,
     `${BUILD}${SCRIPTS}`
-));
+  )
+);
 
 // main task runners
-gulp.task('default', gulp.series(
-    `${LINT}${GULPFILE}`,
-    `${RUN}${SCRIPTS}`,
-    runWatch));
+gulp.task('default', gulp.series(`${LINT}${GULPFILE}`, `${RUN}${SCRIPTS}`, runWatch));

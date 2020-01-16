@@ -20,13 +20,26 @@ import { Identity, Repository, RealWorldClock, TaskScheduler } from '@facetdev/n
 import DomainServices from './scheduling/domainServices';
 
 export default class Services {
-  static initialize = async ({ container, config, db, fcmKey, bootstrap, domain, emailTemplates, emailSender, decorateUser = i => i, identityMapper = token => new Identity(token) }) => {
-
+  static initialize = async ({
+    container,
+    config,
+    db,
+    fcmKey,
+    bootstrap,
+    domain,
+    emailTemplates,
+    emailSender,
+    decorateUser = i => i,
+    identityMapper = token => new Identity(token),
+  }) => {
     await EventStoreInitializer.assureEventsTable(db);
 
     function mapHandlers(handlers) {
-      return Object.entries(handlers).map(([handlerName, handler]) =>
-          ({ name: handlerName, handler: () => container.resolve(handler) }))
+      return Object.entries(handlers)
+        .map(([handlerName, handler]) => ({
+          name: handlerName,
+          handler: () => container.resolve(handler),
+        }))
         .reduce((result, item) => {
           result[item.name] = item.handler;
           return result;
@@ -35,54 +48,61 @@ export default class Services {
 
     const eventStore = new EventStore({
       db: db,
-      mapper: new EventMapper(Object.entries(domain).reduce((events, [name, aggregate]) => {
-        events[name] = aggregate.events;
-        return events;
-      }, {}))
+      mapper: new EventMapper(
+        Object.entries(domain).reduce((events, [name, aggregate]) => {
+          events[name] = aggregate.events;
+          return events;
+        }, {})
+      ),
     });
 
-    if (bootstrap?.events && await eventStore.count() === 0) {
+    if (bootstrap?.events && (await eventStore.count()) === 0) {
       console.log('bootstrapping events');
-      const events = bootstrap.events().reduce((result, event) => {
-        result.sequence[event.aggregateId] = (result.sequence[event.aggregateId] || 0) + 1;
-        result.events.push({
-          ...event,
+      const events = bootstrap.events().reduce(
+        (result, event) => {
+          result.sequence[event.aggregateId] = (result.sequence[event.aggregateId] || 0) + 1;
+          result.events.push({
+            ...event,
+            actor: 'bootstrap',
+            sequenceNumber: result.sequence[event.aggregateId],
+          });
+          return result;
+        },
+        { sequence: {}, events: [] }
+      ).events;
+      await eventStore.record(
+        events.map(ev => ({
+          ...ev,
           actor: 'bootstrap',
-          sequenceNumber: result.sequence[event.aggregateId]
-        });
-        return result;
-      }, { sequence: {}, events: [] }).events;
-      await eventStore.record(events.map(ev => ({
-        ...ev,
-        actor: 'bootstrap'
-      })));
+        }))
+      );
     }
 
-    const repositories = Object.entries(domain).reduce(
-      (repos, [name, aggregate]) => {
-        repos[name] = new Repository({
-          eventStore: eventStore,
-          aggregateType: name,
-          constructor: aggregate.aggregate,
-          snapshots: config('eventStore').snapshots
-        });
-        return repos;
-      }, {});
+    const repositories = Object.entries(domain).reduce((repos, [name, aggregate]) => {
+      repos[name] = new Repository({
+        eventStore: eventStore,
+        aggregateType: name,
+        constructor: aggregate.aggregate,
+        snapshots: config('eventStore').snapshots,
+      });
+      return repos;
+    }, {});
 
-    const executors = Object.entries(domain).map(([aggregateName, aggregate]) =>
-      new CommandExecutor({
-        name: aggregateName,
-        handlers: mapHandlers(aggregate.handlers),
-        repository: repositories[aggregateName]
-      })
+    const executors = Object.entries(domain).map(
+      ([aggregateName, aggregate]) =>
+        new CommandExecutor({
+          name: aggregateName,
+          handlers: mapHandlers(aggregate.handlers),
+          repository: repositories[aggregateName],
+        })
     );
 
     const authStore = await AuthStore.create({
       db,
-      identityMapper
+      identityMapper,
     });
 
-    if (bootstrap?.users && await authStore.count() === 0) {
+    if (bootstrap?.users && (await authStore.count()) === 0) {
       console.log('bootstrapping users');
       for (const user of bootstrap.users()) {
         await authStore.addUser(user);
@@ -93,7 +113,7 @@ export default class Services {
       authStore,
       secret: config.decrypt(config('authentication').secret),
       expiration: config('authentication').expiration,
-      identityMapper
+      identityMapper,
     });
     container.register('AuthTokenMapper', () => authTokenMapper);
 
@@ -102,7 +122,8 @@ export default class Services {
     aws.config.update({
       region: config('aws').SNS_SES_region,
       accessKeyId: config('aws').AccessKey && config.decrypt(config('aws').AccessKey),
-      secretAccessKey: config('aws').SecretAccessKey && config.decrypt(config('aws').SecretAccessKey)
+      secretAccessKey:
+        config('aws').SecretAccessKey && config.decrypt(config('aws').SecretAccessKey),
     });
 
     const stubSES = {
@@ -113,13 +134,16 @@ export default class Services {
   To: ${recipient}
   ---------------------
   ${body.text}`);
-      }
+      },
     };
 
     const emailer = new Emailer({
-      sender: emailSender || ((config('aws').Test || []).includes('email') ?
-        stubSES : new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source })),
-      templateLibrary: emailTemplates
+      sender:
+        emailSender ||
+        ((config('aws').Test || []).includes('email')
+          ? stubSES
+          : new AwsEmailSender({ awsSes: new aws.SES(), from: config('aws').SES_Source })),
+      templateLibrary: emailTemplates,
     });
     container.register('Emailer', () => emailer);
 
@@ -141,14 +165,13 @@ export default class Services {
         const response = await fetch('http://ngrok:4040/api/tunnels', {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         });
         const result = await response.json();
         console.log('setting Gcloud Task callback root to:', result.tunnels?.[0]?.public_url);
         rootUrl = result.tunnels?.[0]?.public_url;
-      }
-      catch (ex) {
+      } catch (ex) {
         console.log('lookup of ngrok in dev environment failed');
       }
     }
@@ -161,14 +184,21 @@ export default class Services {
       credentials: {
         private_key: fcmKey,
         client_email: config('google').serviceAccounts.firebase.client_email,
-        email: config('google').serviceAccounts.firebase.client_email
-      }
+        email: config('google').serviceAccounts.firebase.client_email,
+      },
     });
-    const domainServices = new DomainServices({ commandScheduler, commandExecuter: domainCommandDeliverer, repositories, clock });
+    const domainServices = new DomainServices({
+      commandScheduler,
+      commandExecuter: domainCommandDeliverer,
+      repositories,
+      clock,
+    });
 
     container.register('DomainServices', () => domainServices);
 
-    const commandRouter = new CommandRouter({ webHandler: new WebCommandHandler(domainCommandDeliverer) });
+    const commandRouter = new CommandRouter({
+      webHandler: new WebCommandHandler(domainCommandDeliverer),
+    });
 
     const passwordHandler = new PasswordCommandHandler(domainCommandDeliverer, authStore);
     const authRouter = new AuthenticationRouter({
@@ -176,34 +206,34 @@ export default class Services {
       authStore,
       decorateUser,
       authTokenMapper,
-      passwordHandler
+      passwordHandler,
     });
 
     const injectEventRouter = new InjectEventRouter({
       repositories,
-      eventStore
+      eventStore,
     });
 
-  const taskSchedulerRouter = new TaskSchedulerRouter({
-    deliverer: domainCommandDeliverer,
-    secret: config.decrypt(config('authentication').secret)
-  });
+    const taskSchedulerRouter = new TaskSchedulerRouter({
+      deliverer: domainCommandDeliverer,
+      secret: config.decrypt(config('authentication').secret),
+    });
 
-  return {
+    return {
       routers: {
         command: commandRouter,
         auth: authRouter,
         injectEvent: injectEventRouter,
-        task: taskSchedulerRouter
+        task: taskSchedulerRouter,
       },
       middleware: {
-        identity: new IdentityMiddleware(authTokenMapper).inject
+        identity: new IdentityMiddleware(authTokenMapper).inject,
       },
       aws,
       authStore,
       authTokenMapper,
       emailer,
-      repositories
+      repositories,
     };
-  }
+  };
 }

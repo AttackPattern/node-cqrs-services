@@ -10,6 +10,10 @@ export default class DomainCommandDeliverer {
 
   async deliver({ service, target, commandType, command }) {
     let executor = this.executors[service];
-    return await executor.execute({ aggregateId: target, commandType: commandType || command.type, command });
+    return await executor.execute({
+      aggregateId: target,
+      commandType: commandType || command.type,
+      command,
+    });
   }
 }

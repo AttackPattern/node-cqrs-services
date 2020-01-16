@@ -8,11 +8,11 @@ export default class PasswordCommandHandler {
 
   handleResetCommand = async ctx => {
     return this.handleCommand({ ctx, commandType: 'ResetPassword' });
-  }
+  };
 
   handleChangeCommand = async ctx => {
     return this.handleCommand({ ctx, commandType: 'ChangePassword' });
-  }
+  };
 
   handleCommand = async ({ ctx, commandType }) => {
     const command = ctx.request.body;
@@ -39,27 +39,24 @@ export default class PasswordCommandHandler {
         service: 'user',
         target: user.userId,
         commandType: commandType,
-        command
+        command,
       });
       ctx.status = 200;
       return;
-    }
-    catch (error) {
+    } catch (error) {
       if (error instanceof ValidationError) {
         console.log('Validation failure');
         ctx.status = 400;
-      }
-      else if (error instanceof AuthorizationError) {
+      } else if (error instanceof AuthorizationError) {
         console.log('Authorization failure');
         ctx.status = 403;
-      }
-      else {
+      } else {
         console.log('Unexpected exception');
         ctx.status = 500;
       }
 
-      ctx.body = { error: error ?.message };
+      ctx.body = { error: error?.message };
       console.log(error);
     }
-  }
+  };
 }

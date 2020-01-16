@@ -1,5 +1,4 @@
 export default class Position {
-
   constructor(data = {}) {
     this.latitude = +data.latitude;
     this.longitude = +data.longitude;
@@ -12,12 +11,13 @@ export default class Position {
   }
 
   validate() {
-    return Number.isFinite(this.latitude) &&
+    return (
+      Number.isFinite(this.latitude) &&
       Number.isFinite(this.longitude) &&
       this.latitude >= -90 &&
       this.latitude <= 90 &&
       this.longitude >= -180 &&
-      this.longitude <= 180;
+      this.longitude <= 180
+    );
   }
-
 }

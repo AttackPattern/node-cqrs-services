@@ -10,9 +10,8 @@ export default class Emailer {
     let { subject, body } = await emailTemplate.transform(data);
     try {
       await this.sender.sendEmail({ recipient, subject, body });
-    }
-    catch (err) {
+    } catch (err) {
       console.log('Emailing error', err);
     }
-  }
+  };
 }

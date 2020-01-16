@@ -14,7 +14,7 @@ export default class AuthTokenMapper {
 
   signRefresh(identity) {
     return jwt.sign(identity, this.secret, {
-      expiresIn: this.expiration.refresh
+      expiresIn: this.expiration.refresh,
     });
   }
 
@@ -26,10 +26,9 @@ export default class AuthTokenMapper {
       features.forEach(f => {
         identity.claims.organizations[f.organizationId].features = Object.keys(f.claims);
       });
-
     }
     return jwt.sign(identity, this.secret, {
-        expiresIn: expiration || this.expiration.identity
+      expiresIn: expiration || this.expiration.identity,
     });
   }
 
@@ -40,8 +39,8 @@ export default class AuthTokenMapper {
       refresh: this.signRefresh({
         username: identity.username,
         userId: identity.userId,
-        claims: { organizations: {} }
-      })
+        claims: { organizations: {} },
+      }),
     };
   }
 
@@ -50,13 +49,12 @@ export default class AuthTokenMapper {
       let identity = this.identityMapper(await jwt.verify(token, this.secret));
       return {
         identity,
-        token
+        token,
       };
-    }
-    catch (err) {
+    } catch (err) {
       if (err.name === 'TokenExpiredError') {
         throw new TokenExpiredError();
       }
     }
-  }
+  };
 }

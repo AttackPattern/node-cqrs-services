@@ -4,17 +4,26 @@ export default class EventMapper {
   }
 
   toStoredEvent = event => {
-    let { aggregate, aggregateId, type, sequenceNumber, timestamp, actor, position, ...body } = event;
+    let {
+      aggregate,
+      aggregateId,
+      type,
+      sequenceNumber,
+      timestamp,
+      actor,
+      position,
+      ...body
+    } = event;
     return {
       aggregate: aggregate,
       aggregateId: aggregateId,
-      type: type || name,
+      type: type || body?.name,
       sequenceNumber: sequenceNumber,
       position: JSON.stringify(event.position),
       actor: actor,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     };
-  }
+  };
 
   fromStoredEvent = event => {
     try {
@@ -27,12 +36,11 @@ export default class EventMapper {
         sequenceNumber: event.sequenceNumber,
         actor: event.actor,
         position: JSON.parse(event.position || null),
-        ...JSON.parse(event.body)
+        ...JSON.parse(event.body),
       });
-    }
-    catch (e) {
+    } catch (e) {
       console.log(`Failed to map event ${event.type} ${event.sequenceNumber}`);
       throw e;
     }
-  }
+  };
 }

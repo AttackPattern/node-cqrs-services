@@ -16,7 +16,7 @@ export default class TaskSchedulerRouter extends Router {
       const command = JSON.parse(
         (await rawBody(ctx.req, {
           length: ctx.req.headers['content-length'],
-          limit: '1mb'
+          limit: '1mb',
         })).toString()
       );
       const validToken = await jwt.verify(command.$scheduler.token, this.secret);
@@ -25,14 +25,12 @@ export default class TaskSchedulerRouter extends Router {
         this.deliverer.deliver({
           service: validToken.service,
           target: validToken.target,
-          command
+          command,
         });
       }
-    }
-    catch (ex) {
+    } catch (ex) {
       console.log('task scheduler delivery failed', ex);
-    }
-    finally {
+    } finally {
       ctx.status = 200;
       ctx.message = 'Received task';
     }

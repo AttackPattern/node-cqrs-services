@@ -6,10 +6,11 @@ export default class AuthenticationRouter extends Router {
     super();
 
     this.authStore = authStore;
-    passport.use(new LocalStrategy({ session: false, passReqToCallback: false }, this.authenticate));
+    passport.use(
+      new LocalStrategy({ session: false, passReqToCallback: false }, this.authenticate)
+    );
 
-    this
-      .post('/resetPassword', passwordHandler.handleResetCommand)
+    this.post('/resetPassword', passwordHandler.handleResetCommand)
       .post('/changePassword', passwordHandler.handleChangeCommand)
       .post('/refresh', async (ctx, next) => {
         try {
@@ -19,11 +20,10 @@ export default class AuthenticationRouter extends Router {
           const token = await authTokenMapper.sign({ ...user });
           ctx.body = {
             ...user,
-            token
+            token,
           };
           ctx.status = 200;
-        }
-        catch (ex) {
+        } catch (ex) {
           ctx.status = 401;
           ctx.body = { error: 'Bad refresh token' };
           return;
@@ -40,14 +40,15 @@ export default class AuthenticationRouter extends Router {
           ctx.body = {
             ...identity,
             ...(await authTokenMapper.authenticate(identity)),
-            ...await decorateUser(identity)
+            ...(await decorateUser(identity)),
           };
           ctx.status = 200;
-        })(ctx, next));
+        })(ctx, next)
+      );
   }
 
   authenticate = async (username, password, done) => {
     let foundUser = await this.authStore.checkLogin({ username, password });
     done(!foundUser && 'User not found', foundUser);
-  }
+  };
 }
