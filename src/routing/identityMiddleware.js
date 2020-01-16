@@ -15,8 +15,9 @@ export default class IdentityMiddleware {
   inject = async (ctx, next) => {
     try {
       const { identity, token } = await this.getIdentity(ctx);
+      if (identity?.claims?.require2fa && ctx.request.url !== '/verify2fa')
+        throw new Error('2FA verification required');
       ctx.$identity = identity;
-      ctx.set('authorization', token);
       await next();
     } catch (err) {
       console.log('Failed validating authentication token', err.message);

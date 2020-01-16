@@ -110,6 +110,51 @@ export default class AuthStore {
     }
   };
 
+  deactivate2fa = async ({ username, totpCode }) => {
+    try {
+      let userModel = await this.Login.where({ username }).fetch({
+        columns: ['id', 'userId', 'secret', 'enabled2FA'],
+      });
+      const user = userModel.toJSON();
+      if (!user || !user?.secret || !user?.enabled2FA) {
+        throw new Error(!user ? "User doesn't exist" : '2FA not enabled');
+      }
+      const verified = speakeasy.totp.verify({
+        secret: user.secret,
+        encoding: 'base32',
+        token: totpCode,
+        window: 6,
+      });
+      if (verified) {
+        await userModel.save({ enabled2FA: false, secret: '' });
+        return { removed: true };
+      } else {
+        throw new Error("Confirmation code doesn't match");
+      }
+    } catch (ex) {
+      console.log('deactivate 2FA failure', ex);
+      throw ex;
+    }
+  };
+
+  verify2fa = async ({ username, totpCode }) => {
+    let userModel = await this.Login.where({ username })
+      .where('status', '<>', 'suspended')
+      .fetch();
+    const user = userModel.toJSON();
+    if (!user || !user?.secret || !user?.enabled2FA) {
+      throw new Error(!user ? "User doesn't exist" : '2FA not enabled');
+    }
+    const verified = speakeasy.totp.verify({
+      secret: user.secret,
+      encoding: 'base32',
+      token: totpCode,
+      window: 6,
+    });
+    if (!verified) throw new Error('Incorrect totp code');
+    return { ...this.getIdentity(user), status: user.status };
+  };
+
   toggleFeatures = async ({ organizationId, features }) => {
     let organization = await this.Feature.where({ organizationId }).fetch();
     if (organization) {

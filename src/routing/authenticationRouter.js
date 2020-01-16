@@ -41,7 +41,7 @@ export default class AuthenticationRouter extends Router {
             // confirm 2FA
             ctx.body = await this.authStore.confirm2fa({
               ...verify?.identity,
-              totpCode: body.totpCode,
+              totpCode: body.totpCode.trim(),
             });
           } else {
             ctx.body = await this.authStore.enable2fa(verify?.identity);
@@ -61,14 +61,48 @@ export default class AuthenticationRouter extends Router {
             ctx.body = { error: 'Invalid username or password' };
             return;
           }
+          // check out identity.
+          if (identity?.enabled2fa) {
+            const { username, userId } = identity;
+            const token = await authTokenMapper.sign(
+              { username, userId, claims: { require2fa: true, organizations: {} } },
+              '5m'
+            );
+            ctx.body = { awaitTotp: true, token };
+          } else {
+            ctx.body = {
+              ...identity,
+              ...(await authTokenMapper.authenticate(identity)),
+              ...(await decorateUser(identity)),
+            };
+          }
+          ctx.status = 200;
+        })(ctx, next)
+      )
+      .post('/verify2fa', async (ctx, next) => {
+        try {
+          const token = extractToken(ctx);
+          const verify = await authTokenMapper.verify(token);
+          if (!verify?.identity?.claims?.require2fa)
+            throw new Error('This is only required for valid for users with 2FA enabled');
+          const { body } = ctx.request;
+          if (!body?.totpCode) throw new Error('Code from authenticator is required');
+          // confirm 2FA
+          const identity = await this.authStore.verify2fa({
+            ...verify?.identity,
+            totpCode: body.totpCode.trim(),
+          });
           ctx.body = {
             ...identity,
             ...(await authTokenMapper.authenticate(identity)),
             ...(await decorateUser(identity)),
           };
           ctx.status = 200;
-        })(ctx, next)
-      );
+        } catch (ex) {
+          ctx.status = 401;
+          ctx.body = { error: ex?.message };
+        }
+      });
   }
 
   authenticate = async (username, password, done) => {
