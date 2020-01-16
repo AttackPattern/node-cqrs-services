@@ -18,7 +18,8 @@ export default class AuthStoreInitializer {
           .notNullable()
           .defaultTo('active');
         table.string('version', 36).notNullable();
-        table.string('secret', 32);
+        table.string('secret', 64);
+        table.boolean('enabled2FA').defaultTo(0);
         table.unique('username');
       });
     }

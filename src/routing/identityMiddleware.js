@@ -1,5 +1,12 @@
 import { Identity } from '@facetdev/node-cqrs-lib';
 
+export const extractToken = ctx => {
+  let { [0]: type, [1]: token } =
+    (!!ctx.headers.authorization && ctx.headers.authorization.split(' ')) || [];
+
+  return token || type;
+};
+
 export default class IdentityMiddleware {
   constructor(authTokenMapper) {
     this.authTokenMapper = authTokenMapper;
@@ -19,10 +26,7 @@ export default class IdentityMiddleware {
   };
 
   getIdentity = ctx => {
-    let { [0]: type, [1]: token } =
-      (!!ctx.headers.authorization && ctx.headers.authorization.split(' ')) || [];
-
-    token = token || type;
+    let token = extractToken(ctx);
     if (!token) {
       return { identity: Identity.anonymous };
     }

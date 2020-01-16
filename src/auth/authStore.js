@@ -1,7 +1,8 @@
 import bcrypt from 'bcrypt';
 import uuidV4 from 'uuid/v4';
-import AuthStoreInitializer from './authStoreInitializer';
+import speakeasy from 'speakeasy';
 
+import AuthStoreInitializer from './authStoreInitializer';
 let saltRounds = 10;
 
 export default class AuthStore {
@@ -63,14 +64,48 @@ export default class AuthStore {
 
   enable2fa = async ({ username }) => {
     try {
-      let user = await this.Login.where({ username }).fetch({
-        columns: ['id', 'userId', 'secret'],
+      let userModel = await this.Login.where({ username }).fetch({
+        columns: ['id', 'userId', 'enabled2FA', 'secret'],
       });
-      if (!user || !!user?.secret) {
-        throw new Error(!user ? "User doesn't exist" : '2FA is already enabled for this account');
+      const user = userModel.toJSON();
+      // we might want to block flooding of the system by preventing calls when a secret is present
+      // current approach allows easy re-issue of token in the case they lose their otp url
+      if (!userModel || !!user?.enabled2FA) {
+        throw new Error(
+          !user ? "User doesn't exist" : '2FA is already enabled/pending for this account'
+        );
       }
+      const secret = speakeasy.generateSecret();
+      await userModel.save({ secret: secret.base32 });
+      return { userId: user.id, qrCodeUrl: secret.otpauth_url };
     } catch (ex) {
       console.log('enable 2FA failure', ex);
+      throw ex;
+    }
+  };
+
+  confirm2fa = async ({ username, totpCode }) => {
+    try {
+      let userModel = await this.Login.where({ username }).fetch({
+        columns: ['id', 'userId', 'secret', 'enabled2FA'],
+      });
+      const user = userModel.toJSON();
+      if (!user || !user?.secret) {
+        throw new Error(!user ? "User doesn't exist" : 'no secret present to verify against');
+      }
+      const verified = speakeasy.totp.verify({
+        secret: user.secret,
+        encoding: 'base32',
+        token: totpCode,
+      });
+      if (verified) {
+        await userModel.save({ enabled2FA: true });
+        return { confirmed: true };
+      } else {
+        throw new Error("Confirmation code doesn't match");
+      }
+    } catch (ex) {
+      console.log('confirm 2FA failure', ex);
       throw ex;
     }
   };

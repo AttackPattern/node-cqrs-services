@@ -1,6 +1,8 @@
 import Router from 'koa-router';
 import { Strategy as LocalStrategy } from 'passport-local';
 
+import { extractToken } from './identityMiddleware';
+
 export default class AuthenticationRouter extends Router {
   constructor({ passport, authStore, decorateUser, authTokenMapper, passwordHandler }) {
     super();
@@ -27,6 +29,28 @@ export default class AuthenticationRouter extends Router {
           ctx.status = 401;
           ctx.body = { error: 'Bad refresh token' };
           return;
+        }
+      })
+      .post('/enable2fa', async (ctx, next) => {
+        try {
+          const token = extractToken(ctx);
+          const verify = await authTokenMapper.verify(token);
+          if (!verify?.identity) throw new Error('You must be logged in to enable 2FA');
+          const { body } = ctx.request;
+          if (!!body?.totpCode) {
+            // confirm 2FA
+            ctx.body = await this.authStore.confirm2fa({
+              ...verify?.identity,
+              totpCode: body.totpCode,
+            });
+          } else {
+            ctx.body = await this.authStore.enable2fa(verify?.identity);
+          }
+          console.log('ctx body', ctx.body);
+          ctx.status = 200;
+        } catch (ex) {
+          ctx.status = 401;
+          ctx.body = { error: ex?.message };
         }
       })
       .post('/login', async (ctx, next) =>
