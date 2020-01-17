@@ -96,7 +96,6 @@ export default class Services {
           repository: repositories[aggregateName],
         })
     );
-
     const authStore = await AuthStore.create({
       db,
       identityMapper,
@@ -207,6 +206,7 @@ export default class Services {
       decorateUser,
       authTokenMapper,
       passwordHandler,
+      speakeasyConfig: config('authentication')?.speakeasyConfig || {},
     });
 
     const injectEventRouter = new InjectEventRouter({

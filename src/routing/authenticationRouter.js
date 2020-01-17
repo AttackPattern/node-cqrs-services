@@ -4,7 +4,14 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import { extractToken } from './identityMiddleware';
 
 export default class AuthenticationRouter extends Router {
-  constructor({ passport, authStore, decorateUser, authTokenMapper, passwordHandler }) {
+  constructor({
+    passport,
+    authStore,
+    decorateUser,
+    authTokenMapper,
+    passwordHandler,
+    speakeasyConfig,
+  }) {
     super();
 
     this.authStore = authStore;
@@ -44,9 +51,8 @@ export default class AuthenticationRouter extends Router {
               totpCode: body.totpCode.trim(),
             });
           } else {
-            ctx.body = await this.authStore.enable2fa(verify?.identity);
+            ctx.body = await this.authStore.enable2fa(verify?.identity, speakeasyConfig);
           }
-          console.log('ctx body', ctx.body);
           ctx.status = 200;
         } catch (ex) {
           ctx.status = 401;
@@ -97,6 +103,23 @@ export default class AuthenticationRouter extends Router {
             ...(await authTokenMapper.authenticate(identity)),
             ...(await decorateUser(identity)),
           };
+          ctx.status = 200;
+        } catch (ex) {
+          ctx.status = 401;
+          ctx.body = { error: ex?.message };
+        }
+      })
+      .post('/remove2fa', async (ctx, next) => {
+        try {
+          const token = extractToken(ctx);
+          const verify = await authTokenMapper.verify(token);
+          const { body } = ctx.request;
+          if (!body?.totpCode) throw new Error('Code from authenticator is required');
+          // deactivate if correct totp code
+          ctx.body = await this.authStore.deactivate2fa({
+            ...verify?.identity,
+            totpCode: body.totpCode.trim(),
+          });
           ctx.status = 200;
         } catch (ex) {
           ctx.status = 401;

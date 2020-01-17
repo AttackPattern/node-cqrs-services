@@ -62,78 +62,63 @@ export default class AuthStore {
     }
   };
 
-  enable2fa = async ({ username }) => {
-    try {
-      let userModel = await this.Login.where({ username }).fetch({
-        columns: ['id', 'userId', 'enabled2FA', 'secret'],
-      });
-      const user = userModel.toJSON();
-      // we might want to block flooding of the system by preventing calls when a secret is present
-      // current approach allows easy re-issue of token in the case they lose their otp url
-      if (!userModel || !!user?.enabled2FA) {
-        throw new Error(
-          !user ? "User doesn't exist" : '2FA is already enabled/pending for this account'
-        );
-      }
-      const secret = speakeasy.generateSecret();
-      await userModel.save({ secret: secret.base32 });
-      return { userId: user.id, qrCodeUrl: secret.otpauth_url };
-    } catch (ex) {
-      console.log('enable 2FA failure', ex);
-      throw ex;
+  enable2fa = async ({ username }, config = {}) => {
+    let userModel = await this.Login.where({ username }).fetch({
+      columns: ['id', 'userId', 'enabled2FA', 'secret'],
+    });
+    const user = userModel.toJSON();
+    // we might want to block flooding of the system by preventing calls when a secret is present
+    // current approach allows easy re-issue of token in the case they lose their otp url
+    if (!userModel || !!user?.enabled2FA) {
+      throw new Error(
+        !user ? "User doesn't exist" : '2FA is already enabled/pending for this account'
+      );
     }
+    const secret = speakeasy.generateSecret(config);
+    await userModel.save({ secret: secret.base32 });
+    return { userId: user.id, qrCodeUrl: secret.otpauth_url };
   };
 
   confirm2fa = async ({ username, totpCode }) => {
-    try {
-      let userModel = await this.Login.where({ username }).fetch({
-        columns: ['id', 'userId', 'secret', 'enabled2FA'],
-      });
-      const user = userModel.toJSON();
-      if (!user || !user?.secret) {
-        throw new Error(!user ? "User doesn't exist" : 'no secret present to verify against');
-      }
-      const verified = speakeasy.totp.verify({
-        secret: user.secret,
-        encoding: 'base32',
-        token: totpCode,
-      });
-      if (verified) {
-        await userModel.save({ enabled2FA: true });
-        return { confirmed: true };
-      } else {
-        throw new Error("Confirmation code doesn't match");
-      }
-    } catch (ex) {
-      console.log('confirm 2FA failure', ex);
-      throw ex;
+    let userModel = await this.Login.where({ username }).fetch({
+      columns: ['id', 'userId', 'secret', 'enabled2FA'],
+    });
+    const user = userModel.toJSON();
+    if (!user || !user?.secret) {
+      throw new Error(!user ? "User doesn't exist" : 'no secret present to verify against');
+    }
+    const verified = speakeasy.totp.verify({
+      secret: user.secret,
+      encoding: 'base32',
+      token: totpCode,
+    });
+    if (verified) {
+      await userModel.save({ enabled2FA: true });
+      return { confirmed: true };
+    } else {
+      throw new Error("Confirmation code doesn't match");
     }
   };
 
   deactivate2fa = async ({ username, totpCode }) => {
-    try {
-      let userModel = await this.Login.where({ username }).fetch({
-        columns: ['id', 'userId', 'secret', 'enabled2FA'],
-      });
-      const user = userModel.toJSON();
-      if (!user || !user?.secret || !user?.enabled2FA) {
-        throw new Error(!user ? "User doesn't exist" : '2FA not enabled');
-      }
-      const verified = speakeasy.totp.verify({
-        secret: user.secret,
-        encoding: 'base32',
-        token: totpCode,
-        window: 6,
-      });
-      if (verified) {
-        await userModel.save({ enabled2FA: false, secret: '' });
-        return { removed: true };
-      } else {
-        throw new Error("Confirmation code doesn't match");
-      }
-    } catch (ex) {
-      console.log('deactivate 2FA failure', ex);
-      throw ex;
+    let userModel = await this.Login.where({ username }).fetch({
+      columns: ['id', 'userId', 'secret', 'enabled2FA'],
+    });
+    const user = userModel.toJSON();
+    if (!user || !user?.secret || !user?.enabled2FA) {
+      throw new Error(!user ? "User doesn't exist" : '2FA not enabled');
+    }
+    const verified = speakeasy.totp.verify({
+      secret: user.secret,
+      encoding: 'base32',
+      token: totpCode,
+      window: 6,
+    });
+    if (verified) {
+      await userModel.save({ enabled2FA: false, secret: '' });
+      return { removed: true };
+    } else {
+      throw new Error("Confirmation code doesn't match");
     }
   };
 
