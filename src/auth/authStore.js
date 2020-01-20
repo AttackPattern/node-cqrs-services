@@ -69,7 +69,6 @@ export default class AuthStore {
     const user = userModel.toJSON();
     // we might want to block flooding of the system by preventing calls when a secret is present
     // current approach allows easy re-issue of token in the case they lose their otp url
-    console.log('user', user);
     if (!userModel || !!user?.enabled2FA) {
       throw new Error(
         !user ? "User doesn't exist" : '2FA is already enabled/pending for this account'
