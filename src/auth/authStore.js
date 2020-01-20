@@ -64,7 +64,7 @@ export default class AuthStore {
 
   enable2fa = async ({ username }, config = {}) => {
     let userModel = await this.Login.where({ username }).fetch({
-      columns: ['id','username', 'userId', 'enabled2FA', 'secret', 'status'],
+      columns: ['id', 'username', 'userId', 'enabled2FA', 'secret', 'status'],
     });
     const user = userModel.toJSON();
     // we might want to block flooding of the system by preventing calls when a secret is present
@@ -96,6 +96,9 @@ export default class AuthStore {
     const user = userModel.toJSON();
     if (!user || !user?.secret) {
       throw new Error(!user ? "User doesn't exist" : 'no secret present to verify against');
+    }
+    if (user.secret && user.enable2fa) {
+      throw new Error('2FA already enabled and confirmed');
     }
     const verified = speakeasy.totp.verify({
       secret: user.secret,
