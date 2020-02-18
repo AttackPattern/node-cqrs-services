@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/AttackPattern/node-cqrs-services#readme",
   "dependencies": {
-    "@facetdev/node-cqrs-lib": "0.10.7",
+    "@facetdev/node-cqrs-lib": "0.10.8",
     "async": "3.1.0",
     "aws-sdk": "2.554.0",
     "es-promisify": "1.1.2",
