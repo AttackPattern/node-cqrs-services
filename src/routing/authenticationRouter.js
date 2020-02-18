@@ -114,12 +114,18 @@ export default class AuthenticationRouter extends Router {
           const token = extractToken(ctx);
           const verify = await authTokenMapper.verify(token);
           const { body } = ctx.request;
-          if (!body?.totpCode) throw new Error('Code from authenticator is required');
+          const isAdmin = !!verify?.identity?.rights?.includes('remove2FA');
+          if (!body?.totpCode && !isAdmin) throw new Error('Code from authenticator is required');
           // deactivate if correct totp code
-          ctx.body = await this.authStore.deactivate2fa({
-            ...verify?.identity,
-            totpCode: body.totpCode.trim(),
-          });
+          if (isAdmin && !body?.username && !body?.totpCode) {
+            throw new Error('Admin removal of 2FA requires');
+          }
+          const payload = verify?.identity;
+          if (body?.totpCode) {
+            payload.totpCode = body.totpCode.trim();
+          } else if (isAdmin) payload.username = body?.username;
+
+          ctx.body = await this.authStore.deactivate2fa(payload);
           ctx.status = 200;
         } catch (ex) {
           ctx.status = 401;

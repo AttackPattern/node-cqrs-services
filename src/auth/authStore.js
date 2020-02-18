@@ -112,7 +112,7 @@ export default class AuthStore {
     }
   };
 
-  deactivate2fa = async ({ username, totpCode }) => {
+  deactivate2fa = async ({ username, totpCode, rights = [] }) => {
     let userModel = await this.Login.where({ username }).fetch({
       columns: ['id', 'userId', 'secret', 'enabled2FA'],
     });
@@ -120,13 +120,16 @@ export default class AuthStore {
     if (!user || !user?.secret || !user?.enabled2FA) {
       throw new Error(!user ? "User doesn't exist" : '2FA not enabled');
     }
-    const verified = speakeasy.totp.verify({
-      secret: user.secret,
-      encoding: 'base32',
-      token: totpCode,
-      window: 6,
-    });
-    if (verified) {
+    let verified = false;
+    if (!rights?.includes('remove2FA')) {
+      verified = speakeasy.totp.verify({
+        secret: user.secret,
+        encoding: 'base32',
+        token: totpCode,
+        window: 6,
+      });
+    }
+    if (verified || rights?.includes('remove2FA')) {
       await userModel.save({ enabled2FA: false, secret: '' });
       return { removed: true };
     } else {
